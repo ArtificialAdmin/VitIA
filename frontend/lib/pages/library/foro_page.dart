@@ -216,75 +216,87 @@ class _ForoPageState extends State<ForoPage>
   void _mostrarMenuFiltros(BuildContext context) {
     showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (ctx) {
           return StatefulBuilder(builder: (ctx, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Ordenar por",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold)),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Listo",
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 24.0,
+                  right: 24.0,
+                  top: 24.0,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom +
+                      24.0, // Safe area for keyboard/nav
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Ordenar por",
                             style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Listo",
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                  // SECCIÓN: TIEMPO
-                  const Text("Fecha",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    children: [
-                      _buildFilterChip("Más Nuevos", 'newest', setModalState),
-                      _buildFilterChip("Más Antiguos", 'oldest', setModalState),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                    // SECCIÓN: TIEMPO
+                    const Text("Fecha",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      children: [
+                        _buildFilterChip("Más Nuevos", 'newest', setModalState),
+                        _buildFilterChip(
+                            "Más Antiguos", 'oldest', setModalState),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                  // SECCIÓN: INTERACCIÓN
-                  const Text("Interacción",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    children: [
-                      _buildFilterChip("Más Gustados", 'likes', setModalState),
-                      _buildFilterChip(
-                          "Más Comentados", 'comments', setModalState),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                    // SECCIÓN: INTERACCIÓN
+                    const Text("Interacción",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      children: [
+                        _buildFilterChip(
+                            "Más Gustados", 'likes', setModalState),
+                        _buildFilterChip(
+                            "Más Comentados", 'comments', setModalState),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                  // SECCIÓN: OTROS
-                  const Text("Otros",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    children: [
-                      _buildFilterChip("Autor (A-Z)", 'author', setModalState),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    // SECCIÓN: OTROS
+                    const Text("Otros",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      children: [
+                        _buildFilterChip(
+                            "Autor (A-Z)", 'author', setModalState),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             );
           });
@@ -348,57 +360,6 @@ class _ForoPageState extends State<ForoPage>
                     ),
                   ),
 
-                  // BARRA DE BÚSQUEDA Y FILTROS (Visible SOLO si _isSearching es true)
-                  if (_isSearching)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              autofocus:
-                                  true, // Auto-foco al abrir como en biblioteca? En biblioteca no tiene autofocus explícito pero UX es mejor.
-                              decoration: InputDecoration(
-                                hintText: "Buscar...",
-                                prefixIcon: const Icon(Icons.search,
-                                    color: Colors.grey),
-                                // SIN BOTÓN DE CERRAR INTERNO
-                                filled: true,
-                                fillColor: Colors.grey.shade200,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              shape: BoxShape.circle, // Forma circular
-                            ),
-                            child: InkWell(
-                              onTap: () => _mostrarMenuFiltros(context),
-                              customBorder: const CircleBorder(),
-                              child:
-                                  const Icon(Icons.sort, color: Colors.black54),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                   // TABS PERSONALIZADOS (Estilo Biblioteca)
                   Container(
                     margin:
@@ -432,6 +393,65 @@ class _ForoPageState extends State<ForoPage>
                         Tab(text: "Todos"),
                         Tab(text: "Tus hilos"),
                       ],
+                    ),
+                  ),
+
+                  // BARRA DE BÚSQUEDA Y FILTROS (Movid a AQUÍ, debajo de tabs)
+                  ClipRect(
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: SizedBox(
+                        height: _isSearching ? null : 0,
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 10),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchQuery = value;
+                                    });
+                                  },
+                                  autofocus:
+                                      true, // Mantenemos autofocus al abrir
+                                  decoration: InputDecoration(
+                                    hintText: "Buscar...",
+                                    prefixIcon: const Icon(Icons.search,
+                                        color: Colors.grey),
+                                    filled: true,
+                                    fillColor: Colors.grey.shade200,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: InkWell(
+                                  onTap: () => _mostrarMenuFiltros(context),
+                                  customBorder: const CircleBorder(),
+                                  child: const Icon(Icons.sort,
+                                      color: Colors.black54),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 

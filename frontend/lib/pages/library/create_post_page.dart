@@ -39,7 +39,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       XFile? image;
-      
+
       if (source == ImageSource.camera) {
         // Use custom camera
         final result = await Navigator.push(
@@ -264,8 +264,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                   child: Image.memory(
                                     _imageBytes!,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) {
+                                    errorBuilder: (context, error, stackTrace) {
                                       return Center(
                                         child: Text(
                                             'Error visualizando imagen: $error',
@@ -361,27 +360,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
               ),
             ),
 
-            // BOTÓN PUBLICAR GRANDE
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: ElevatedButton(
-                onPressed: _isPublishing ? null : _handlePublish,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7A7A30), // Color Oliva
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
-                  textStyle: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                  elevation: 0,
-                ),
-                child: _isPublishing
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Publicar'),
-              ),
-            ),
+            // BOTÓN PUBLICAR GRANDE ELIMINADO
+            const SizedBox(height: 20),
           ],
         ),
       ),

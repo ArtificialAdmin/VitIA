@@ -10,6 +10,12 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    // packaging { // Removed as it wasn't effective
+    //    jniLibs {
+    //         keepDebugSymbols.add("**/*.so")
+    //    }
+    // }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -41,4 +47,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Workaround for Windows file lock issue in NDK
+tasks.whenTaskAdded {
+    if (name == "stripReleaseDebugSymbols") {
+        enabled = false
+    }
 }
