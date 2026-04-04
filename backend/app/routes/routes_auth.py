@@ -36,7 +36,8 @@ def register_user(
     password: str = Form(...),
     nombre: str = Form(...),
     apellidos: str = Form(...),
-    ubicacion: Optional[str] = Form(None),
+    latitud: Optional[float] = Form(None),
+    longitud: Optional[float] = Form(None),
     foto: Union[UploadFile, str, None] = File(None),
     db: Session = Depends(get_db)
 ):
@@ -74,7 +75,8 @@ def register_user(
         password=password, # Pasamos la password PLANA, crud.create_user la encriptará
         nombre=nombre,
         apellidos=apellidos,
-        ubicacion=ubicacion
+        latitud=latitud,
+        longitud=longitud
     )
 
     # 5. Guardar en BD

@@ -251,6 +251,7 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             VitiaHeader(

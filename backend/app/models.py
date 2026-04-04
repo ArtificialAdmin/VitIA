@@ -62,7 +62,8 @@ class Usuario(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     es_premium = Column(Boolean, default=False)
-    ubicacion = Column(String(255), nullable=True)
+    latitud = Column(Float, nullable=True)
+    longitud = Column(Float, nullable=True)
     tutorial_superado = Column(Boolean, default=False)
     path_foto_perfil = Column(String(512), nullable=True)
     

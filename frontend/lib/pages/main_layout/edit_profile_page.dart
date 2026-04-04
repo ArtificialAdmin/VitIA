@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api_client.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart'; // kIsWeb
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class EditProfilePage extends StatefulWidget {
   final ApiClient apiClient;
@@ -20,7 +22,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   // Controladores para los campos
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _apellidosController = TextEditingController();
-  final TextEditingController _ubicacionController = TextEditingController();
+  final TextEditingController _ubicacionDisplayController = TextEditingController();
+  
+  // Coordenadas
+  double? _lat;
+  double? _lon;
+  bool _shareLocation = false;
+  bool _isLocating = false;
 
   // Imagen
   XFile? _imageFile; // Cambiado a XFile para compatibilidad Web
@@ -30,11 +38,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _isLoading = true;
   bool _isSaving = false;
 
+  // Valores iniciales para detectar cambios
+  String _initialNombre = "";
+  String _initialApellidos = "";
+  double? _initialLat;
+  double? _initialLon;
+
   @override
   void initState() {
     super.initState();
+    // Escuchar cambios para habilitar/deshabilitar el botón de guardar
+    _nombreController.addListener(_rebuild);
+    _apellidosController.addListener(_rebuild);
     _loadUserData();
   }
+
+  void _rebuild() => setState(() {});
 
   Future<void> _loadUserData() async {
     try {
@@ -43,10 +62,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _nombreController.text = userData['nombre'] ?? '';
           _apellidosController.text = userData['apellidos'] ?? '';
-          _ubicacionController.text = userData['ubicacion'] ?? '';
+          _lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
+          _lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
           _currentPhotoUrl = userData['path_foto_perfil'];
+          
+          // Guardar iniciales
+          _initialNombre = _nombreController.text;
+          _initialApellidos = _apellidosController.text;
+          _initialLat = _lat;
+          _initialLon = _lon;
+          
           _isLoading = false;
         });
+
+        // Si hay coordenadas, obtener el nombre del lugar para mostrarlo
+        if (_lat != null && _lon != null) {
+          _shareLocation = true;
+          _updateAddressDisplay(_lat!, _lon!);
+        } else {
+          _shareLocation = false;
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -55,6 +90,62 @@ class _EditProfilePageState extends State<EditProfilePage> {
           SnackBar(content: Text('Error cargar perfil: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _updateAddressDisplay(double lat, double lon) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = "${place.locality}, ${place.administrativeArea}, ${place.country}";
+        _ubicacionDisplayController.text = address;
+      } else {
+        _ubicacionDisplayController.text = "Ubicación activa";
+      }
+    } catch (e) {
+      _ubicacionDisplayController.text = "Ubicación activa";
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw 'Permiso de ubicación denegado';
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        throw 'Permisos denegados permanentemente. Por favor, actívalos en ajustes.';
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high
+      );
+
+      if (mounted) {
+        setState(() {
+          _lat = position.latitude;
+          _lon = position.longitude;
+        });
+      }
+
+      await _updateAddressDisplay(_lat!, _lon!);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ubicación obtenida correctamente')),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al geolocalizar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
     }
   }
 
@@ -87,7 +178,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final Map<String, dynamic> updates = {
         "nombre": _nombreController.text.trim(),
         "apellidos": _apellidosController.text.trim(),
-        "ubicacion": _ubicacionController.text.trim(),
+        "latitud": _lat,
+        "longitud": _lon,
       };
 
       await widget.apiClient.updateProfile(updates);
@@ -109,11 +201,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  bool get _hasChanges {
+    final bool nombreChanged = _nombreController.text.trim() != _initialNombre;
+    final bool apellidosChanged = _apellidosController.text.trim() != _initialApellidos;
+    final bool latChanged = _lat != _initialLat;
+    final bool lonChanged = _lon != _initialLon;
+    final bool imageChanged = _imageFile != null;
+    
+    return nombreChanged || apellidosChanged || latChanged || lonChanged || imageChanged;
+  }
+
   @override
   void dispose() {
     _nombreController.dispose();
     _apellidosController.dispose();
-    _ubicacionController.dispose();
+    _ubicacionDisplayController.dispose();
     super.dispose();
   }
 
@@ -146,8 +248,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+          : Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -201,19 +305,69 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       icon: Icons.person_outline,
                     ),
                     const SizedBox(height: 20),
-                    _buildTextField(
-                      controller: _ubicacionController,
-                      label: "Ubicación (Ciudad, País)",
-                      icon: Icons.location_on_outlined,
-                      hint: "Ej. Requena, Valencia",
-                      isOptional: true,
+                    // INTERRUPTOR DE UBICACIÓN AUTOMÁTICA
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFCFBF6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SwitchListTile(
+                            title: const Text(
+                              "Compartir ubicación para el clima",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF142018),
+                              ),
+                            ),
+                            subtitle: const Text(
+                              "Captura tu posición actual automáticamente",
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            value: _shareLocation,
+                            activeColor: const Color(0xFF142018),
+                            secondary: const Icon(Icons.location_on_outlined, color: Color(0xFF142018)),
+                            onChanged: (bool value) {
+                              setState(() {
+                                _shareLocation = value;
+                              });
+                              if (value) {
+                                _getCurrentLocation();
+                              } else {
+                                setState(() {
+                                  _lat = null;
+                                  _lon = null;
+                                  _ubicacionDisplayController.clear();
+                                });
+                              }
+                            },
+                          ),
+                          if (_shareLocation && _ubicacionDisplayController.text.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 70, bottom: 12, right: 16),
+                              child: Text(
+                                _isLocating ? "Localizando..." : _ubicacionDisplayController.text,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 40),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveProfile,
+                        onPressed: (_isSaving || _isLocating || !_hasChanges) ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF142018),
                           foregroundColor: Colors.white,
@@ -221,17 +375,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: _isSaving
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text("Guardar Cambios",
-                                style: TextStyle(fontSize: 16)),
+                        child: const Text("Guardar Cambios",
+                            style: TextStyle(fontSize: 16)),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+            if (_isLocating || _isSaving)
+              Container(
+                color: Colors.white.withOpacity(0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF142018),
+                  ),
+                ),
+              ),
+          ],
+        ),
     );
   }
 
@@ -241,13 +403,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required IconData icon,
     String? hint,
     bool isOptional = false,
+    bool readOnly = false,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       controller: controller,
+      readOnly: readOnly,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

@@ -10,6 +10,7 @@ import '../../core/services/api_config.dart';
 import '../main_layout/home_page.dart';
 import 'login_page.dart';
 import 'package:vinas_mobile/core/services/user_sesion.dart';
+import 'package:geolocator/geolocator.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -23,7 +24,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController passCtrl = TextEditingController();
   final TextEditingController nombreCtrl = TextEditingController();
   final TextEditingController apellidosCtrl = TextEditingController();
-  final TextEditingController ubicacionCtrl = TextEditingController();
+  
+  bool _shareLocation = false;
+  bool _isLocating = false;
 
   // Color principal (Vino VitIA: #A01B4C)
   final Color _authMainColor = const Color(0xFFA01B4C);
@@ -61,7 +64,29 @@ class _RegisterPageState extends State<RegisterPage> {
       request.fields['password'] = passCtrl.text.trim();
       request.fields['nombre'] = nombreCtrl.text.trim();
       request.fields['apellidos'] = apellidosCtrl.text.trim();
-      request.fields['ubicacion'] = ubicacionCtrl.text.trim();
+
+      // Nueva Lógica de Ubicación Automática
+      if (_shareLocation) {
+        setState(() => _isLocating = true);
+        try {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            permission = await Geolocator.requestPermission();
+          }
+          
+          if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+            Position position = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.medium
+            );
+            request.fields['latitud'] = position.latitude.toString();
+            request.fields['longitud'] = position.longitude.toString();
+          }
+        } catch (e) {
+          debugPrint("Error al capturar ubicación en registro: $e");
+        } finally {
+          setState(() => _isLocating = false);
+        }
+      }
 
       // Archivo (si existe)
       if (_pickedFile != null) {
@@ -263,33 +288,34 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 15),
 
-                // CAMPO UBICACIÓN
-                TextField(
-                  controller: ubicacionCtrl,
-                  style: TextStyle(color: _authMainColor, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: "Ubicación (opcional)",
-                    prefixIcon:
-                        Icon(Icons.location_on_outlined, color: _authMainColor),
-                    hintStyle:
-                        TextStyle(color: _authMainColor.withOpacity(0.7)),
-                    filled: true,
-                    fillColor: _authFieldColor,
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide:
-                            BorderSide(color: _authMainColor, width: 2)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide:
-                            BorderSide(color: _authFieldColor, width: 2)),
-                    labelStyle:
-                        TextStyle(color: _authMainColor), // Add label style
-                    border: OutlineInputBorder(
-                        // Explicit border
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide:
-                            BorderSide(color: _authMainColor, width: 2)),
+                // UBICACIÓN AUTOMÁTICA (TOGGLE)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _authFieldColor,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: SwitchListTile(
+                    title: Text(
+                      "Compartir ubicación para el clima",
+                      style: TextStyle(
+                        color: _authMainColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500
+                      ),
+                    ),
+                    value: _shareLocation,
+                    activeColor: _authMainColor,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _shareLocation = value;
+                      });
+                    },
+                    secondary: Icon(
+                      Icons.location_on_outlined,
+                      color: _authMainColor,
+                    ),
                   ),
                 ),
 
@@ -361,9 +387,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25)),
                     ),
-                    child: const Text("Continuar",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: _isLocating 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Continuar",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
 

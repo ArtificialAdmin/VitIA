@@ -169,7 +169,8 @@ class UsuarioBase(BaseModel):
     email: EmailStr  # Pydantic valida que sea un email válido
     nombre: str
     apellidos: str
-    ubicacion: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
     tutorial_superado: bool = False
     path_foto_perfil: Optional[str] = None
 
@@ -186,7 +187,8 @@ class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     apellidos: Optional[str] = None
     email: Optional[EmailStr] = None
-    ubicacion: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
     tutorial_superado: Optional[bool] = None
     path_foto_perfil: Optional[str] = None
 

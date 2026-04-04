@@ -6,6 +6,7 @@ import 'package:vinas_mobile/core/services/user_sesion.dart';
 import '../auth/login_page.dart';
 import '../../core/api_client.dart';
 import 'edit_profile_page.dart';
+import 'package:geocoding/geocoding.dart';
 
 class PerfilPage extends StatefulWidget {
   final ApiClient apiClient;
@@ -35,8 +36,16 @@ class _PerfilPageState extends State<PerfilPage> {
       if (mounted) {
         setState(() {
           _nombreUser = "${userData['nombre']} ${userData['apellidos']}";
-          _ubicacionUser = userData['ubicacion'] ?? "Sin ubicación";
-          _userPhotoUrl = userData['path_foto_perfil']; // Cargar URL
+          _userPhotoUrl = userData['path_foto_perfil'];
+          
+          double? lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
+          double? lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
+          
+          if (lat != null && lon != null) {
+            _updateAddressDisplay(lat, lon);
+          } else {
+            _ubicacionUser = "Sin ubicación";
+          }
         });
       }
     } catch (_) {
@@ -45,6 +54,27 @@ class _PerfilPageState extends State<PerfilPage> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _updateAddressDisplay(double lat, double lon) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = "${place.locality}, ${place.administrativeArea}";
+        if (mounted) {
+          setState(() => _ubicacionUser = address);
+        }
+      } else {
+        if (mounted) {
+          setState(() => _ubicacionUser = "$lat, $lon");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _ubicacionUser = "Ubicación detectada");
       }
     }
   }

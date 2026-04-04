@@ -10,7 +10,9 @@ class InicioScreen extends StatefulWidget {
   // Convert to Stateful
   final String userName;
   final String location;
-  final String? userPhotoUrl; // Nuevo campo
+  final double? lat;
+  final double? lon;
+  final String? userPhotoUrl;
   final VoidCallback? onProfileTap;
   final ApiClient apiClient;
 
@@ -18,6 +20,8 @@ class InicioScreen extends StatefulWidget {
     super.key,
     required this.userName,
     required this.location,
+    this.lat,
+    this.lon,
     this.userPhotoUrl,
     this.onProfileTap,
     required this.apiClient,
@@ -31,6 +35,7 @@ class _InicioScreenState extends State<InicioScreen> {
   final WeatherService _weatherService = WeatherService();
   Map<String, dynamic>? _weatherData;
   String? _weatherError;
+  String? _displayLocation;
   bool _isLoadingWeather = true;
 
   @override
@@ -39,22 +44,44 @@ class _InicioScreenState extends State<InicioScreen> {
     _fetchWeather();
   }
 
+  @override
+  void didUpdateWidget(InicioScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Si la ubicación o coordenadas han cambiado, recargar el tiempo
+    if (oldWidget.location != widget.location ||
+        oldWidget.lat != widget.lat ||
+        oldWidget.lon != widget.lon) {
+      _fetchWeather();
+    }
+  }
+
   Future<void> _fetchWeather() async {
-    if (widget.location.isEmpty) {
-      if (mounted)
-        setState(() {
-          _isLoadingWeather = false;
-        });
+    // Si no hay coordenadas ni ubicación, no podemos hacer mucho
+    if ((widget.lat == null || widget.lon == null) && widget.location.isEmpty) {
+      if (mounted) {
+        setState(() => _isLoadingWeather = false);
+      }
       return;
     }
 
     // Limpiar ubicación para la API (quitar ", España" si molesta, o dejarlo)
     try {
-      final data = await _weatherService.getWeather(widget.location);
+      final data = await _weatherService.getWeather(
+        location: widget.location,
+        lat: widget.lat,
+        lon: widget.lon,
+      );
       if (mounted) {
         setState(() {
           _weatherData = data;
           _isLoadingWeather = false;
+          
+          // Actualizar la ubicación mostrada con el nombre de la ciudad de la API
+          if (data != null && data['location'] != null) {
+            final name = data['location']['name'];
+            final region = data['location']['region'];
+            _displayLocation = "$name, $region";
+          }
         });
       }
     } catch (e) {
@@ -146,9 +173,7 @@ class _InicioScreenState extends State<InicioScreen> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              widget.location.isNotEmpty
-                                  ? "${widget.location}."
-                                  : "Sin ubicación definida.",
+                              (_displayLocation ?? (widget.location.isNotEmpty ? widget.location : "Sin ubicación definida")) + ".",
                               style: const TextStyle(
                                   fontSize: 16, color: Colors.black87),
                               overflow: TextOverflow.ellipsis,

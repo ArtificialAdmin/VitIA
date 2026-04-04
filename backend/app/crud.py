@@ -149,7 +149,8 @@ def create_user(db: Session, user: schemas.UsuarioCreate, url_foto: str = None):
         apellidos=user.apellidos,
         email=user.email,
         password_hash=fake_hashed_password,
-        ubicacion=user.ubicacion,
+        latitud=user.latitud,
+        longitud=user.longitud,
         path_foto_perfil=url_foto,
         tutorial_superado=False # Valor por defecto seguro
     )
@@ -226,7 +227,6 @@ def delete_publicacion(db: Session, db_publicacion: models.Publicacion):
 def get_publicaciones(db: Session, skip: int = 0, limit: int = 100):
     """Obtiene una lista paginada de todas las publicaciones del foro."""
     return db.query(models.Publicacion)\
-             .filter(models.Publicacion.es_publica == True)\
              .order_by(models.Publicacion.fecha_publicacion.desc())\
              .offset(skip)\
              .limit(limit)\

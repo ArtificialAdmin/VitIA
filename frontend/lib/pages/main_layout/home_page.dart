@@ -1,9 +1,11 @@
 // lib/pages/main_layout/home_page.dart
 
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:dio/dio.dart';
+import 'package:geocoding/geocoding.dart';
 
 // Importaciones de páginas y servicios
 import '../gallery/catalogo_page.dart';
@@ -34,6 +36,8 @@ class _HomepageState extends State<HomePage> {
   bool _hasShownTutorialSession = false; // Flag para mostrar solo una vez
   String _userName = "Usuario";
   String _userLocation = "";
+  double? _lat;
+  double? _lon;
   String? _userPhotoUrl; // Nueva variable para la foto
   late ApiClient _apiClient;
 
@@ -42,6 +46,8 @@ class _HomepageState extends State<HomePage> {
         InicioScreen(
           userName: _userName,
           location: _userLocation,
+          lat: _lat,
+          lon: _lon,
           userPhotoUrl: _userPhotoUrl, // Pasamos la foto
           apiClient: _apiClient,
           onProfileTap: () async {
@@ -113,9 +119,16 @@ class _HomepageState extends State<HomePage> {
         if (mounted) {
           setState(() {
             _userName = userData['nombre'] ?? "Usuario";
-            _userLocation = userData['ubicacion'] ?? "";
-            _userPhotoUrl = userData['path_foto_perfil']; // Cargar foto
+            _lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
+            _lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
+            _userPhotoUrl = userData['path_foto_perfil'];
           });
+          
+          if (_lat != null && _lon != null) {
+            _updateAddressDisplay(_lat!, _lon!);
+          } else {
+            setState(() => _userLocation = "");
+          }
         }
       } catch (e) {
         debugPrint("Error al cargar perfil usuario: $e");
@@ -139,6 +152,23 @@ class _HomepageState extends State<HomePage> {
       if (mounted) setState(() => _tutorialSuperado = true);
     } finally {
       if (mounted) setState(() => _isLoadingStatus = false);
+    }
+  }
+
+  Future<void> _updateAddressDisplay(double lat, double lon) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = "${place.locality}, ${place.administrativeArea}";
+        if (mounted) {
+          setState(() => _userLocation = address);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _userLocation = "Ubicación detectada");
+      }
     }
   }
 
@@ -204,44 +234,54 @@ class _HomepageState extends State<HomePage> {
     const Color darkBarColor = Color(0xFF142018); // Negro VitIA
     const Color activeTabColor =
         Color.fromARGB(255, 255, 255, 255); // Magenta/Vino
-
     return Scaffold(
       extendBody: true,
-
       body: _screens[currentIndex],
-
-      // BARRA DE NAVEGACIÓN FLOTANTE (OPERATIVA)
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
-        child: Container(
-          decoration: BoxDecoration(
-            color: darkBarColor,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: darkBarColor.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
+      bottomNavigationBar: Container(
+        height: 110,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white.withOpacity(0),
+              Colors.white.withOpacity(0.6),
+              Colors.white.withOpacity(0.9),
             ],
           ),
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-            child: GNav(
-              gap: 8,
-              color: Colors.white70,
-              activeColor: Colors.white,
-              tabBackgroundColor:
-                  activeTabColor, // Blanco puro (definido arriba como 255,255,255,255)
-              tabBorderRadius: 100,
-              tabShadow: const [],
-              padding: const EdgeInsets.all(12),
-              selectedIndex: currentIndex,
-              onTabChange: (index) {
-                setState(() => currentIndex = index);
-              },
+        ),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: darkBarColor.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: darkBarColor.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                  child: GNav(
+                    gap: 8,
+                    color: Colors.white70,
+                    activeColor: Colors.white,
+                    tabBackgroundColor: activeTabColor,
+                    tabBorderRadius: 100,
+                    tabShadow: const [],
+                    padding: const EdgeInsets.all(12),
+                    selectedIndex: currentIndex,
+                    onTabChange: (index) {
+                      setState(() => currentIndex = index);
+                    },
 
               // 🚨 SUSTITUCIÓN DE ICONOS: Usamos Image.asset de la carpeta assets/navbar
               tabs: [
@@ -296,6 +336,9 @@ class _HomepageState extends State<HomePage> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+),
+);
   }
 }
