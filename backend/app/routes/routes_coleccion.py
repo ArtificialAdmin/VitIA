@@ -45,6 +45,21 @@ def read_user_coleccion_endpoint(
 ):
     return crud.get_user_coleccion(db=db, id_usuario=current_user.id_usuario, skip=skip, limit=limit)
 
+@router.get("/mapa",
+    response_model=List[schemas.Coleccion],
+    summary="Obtener todas las identificaciones con ubicación para el mapa"
+)
+def read_colecciones_mapa_endpoint(
+    modo: str = "publico",
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Obtiene todas las identificaciones/colecciones que contengan coordenadas,
+    ideal para pintarlas en el mapa.
+    """
+    colecciones = crud.get_colecciones_mapa(db, modo=modo, id_usuario=current_user.id_usuario)
+    return colecciones
 
 @router.get("/{id_coleccion}",
     response_model=schemas.Coleccion,
@@ -113,6 +128,7 @@ async def create_coleccion_with_image(
     notas: str = Form(None),
     latitud: float = Form(None),
     longitud: float = Form(None),
+    es_publica: bool = Form(True),
     current_user: models.Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -142,7 +158,8 @@ async def create_coleccion_with_image(
         fecha_captura=datetime.utcnow(),
         notas=notas,
         latitud=latitud,
-        longitud=longitud
+        longitud=longitud,
+        es_publica=es_publica
     )
     
     db.add(nuevo_item)
@@ -150,3 +167,19 @@ async def create_coleccion_with_image(
     db.refresh(nuevo_item)
     
     return nuevo_item
+
+@router.get("/mapa",
+    response_model=List[schemas.Coleccion],
+    summary="Obtener todas las identificaciones con ubicación para el mapa"
+)
+def read_colecciones_mapa_endpoint(
+    modo: str = "publico",
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Obtiene todas las identificaciones/colecciones que contengan coordenadas,
+    ideal para pintarlas en el mapa.
+    """
+    colecciones = crud.get_colecciones_mapa(db, modo=modo, id_usuario=current_user.id_usuario)
+    return colecciones

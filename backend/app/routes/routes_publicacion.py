@@ -74,6 +74,7 @@ async def create_publicacion_endpoint(
         id_usuario=current_user.id_usuario
     )
 
+
 @router.get("/",
     response_model=List[schemas.Publicacion],
     summary="Obtener todas las publicaciones del foro (Feed)"

@@ -73,6 +73,13 @@ class Variedad(VariedadBase, BaseConfig):
     """Esquema para LEER una Variedad (lo que se devuelve al usuario)."""
     id_variedad: int
 
+# --- Esquema intermedio para el propietario de la colección ---
+class AutorColeccion(BaseConfig):
+    """Un esquema reducido para mostrar solo info pública del propietario."""
+    id_usuario: int
+    nombre: str
+    apellidos: str
+
 # -----------------------------------------------------
 # Esquemas: Coleccion (Personal del Usuario)
 # -----------------------------------------------------
@@ -83,6 +90,7 @@ class ColeccionBase(BaseModel):
     notas: Optional[str] = None
     latitud: Optional[float] = None
     longitud: Optional[float] = None
+    es_publica: Optional[bool] = True
 
 class ColeccionCreate(ColeccionBase):
     """Esquema para crear un item en la colección.
@@ -103,6 +111,7 @@ class Coleccion(ColeccionBase, BaseConfig):
     # Al leer un item de la colección, queremos ver
     # la información completa de la variedad, no solo su ID.
     variedad: Variedad 
+    propietario: AutorColeccion
 
 class ColeccionUpdate(BaseModel):
     """
@@ -114,6 +123,7 @@ class ColeccionUpdate(BaseModel):
     notas: Optional[str] = None
     latitud: Optional[float] = None
     longitud: Optional[float] = None
+    es_publica: Optional[bool] = None
 
 # -----------------------------------------------------
 # Esquemas: Publicacion (Foro)
@@ -124,7 +134,6 @@ class PublicacionBase(BaseModel):
     titulo: str
     texto: str
     links_fotos: Optional[List[str]] = None
-
 
 class PublicacionCreate(PublicacionBase):
     """Esquema para CREAR una publicación."""

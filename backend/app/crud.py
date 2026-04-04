@@ -1,6 +1,6 @@
 # --- En tu archivo /app/crud.py ---
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from . import models, schemas, security
 from typing import List, Optional
 
@@ -193,7 +193,7 @@ def create_publicacion(db: Session, publicacion: schemas.PublicacionCreate, id_u
     db_publicacion = models.Publicacion(
         titulo=publicacion.titulo,
         texto=publicacion.texto,
-        links_fotos=publicacion.links_fotos, # Asumiendo que ya arreglaste el validador o la BD
+        links_fotos=publicacion.links_fotos,
         id_usuario=id_usuario
         # 'likes' empieza en 0 por defecto
     )
@@ -226,10 +226,24 @@ def delete_publicacion(db: Session, db_publicacion: models.Publicacion):
 def get_publicaciones(db: Session, skip: int = 0, limit: int = 100):
     """Obtiene una lista paginada de todas las publicaciones del foro."""
     return db.query(models.Publicacion)\
+             .filter(models.Publicacion.es_publica == True)\
              .order_by(models.Publicacion.fecha_publicacion.desc())\
              .offset(skip)\
              .limit(limit)\
              .all()
+
+def get_colecciones_mapa(db: Session, modo: str = "publico", id_usuario: int = None):
+    """Obtiene todos los items de la coleccion que tienen coordenadas geográficas para mostrarlas en el mapa."""
+    query = db.query(models.Coleccion)\
+              .options(joinedload(models.Coleccion.propietario))\
+              .filter(models.Coleccion.latitud.isnot(None), models.Coleccion.longitud.isnot(None))
+    
+    if modo == "privado" and id_usuario:
+        query = query.filter(models.Coleccion.id_usuario == id_usuario)
+    else:
+        query = query.filter(models.Coleccion.es_publica == True)
+        
+    return query.order_by(models.Coleccion.fecha_captura.desc()).all()
 
 def like_publicacion(db: Session, id_publicacion: int):
     """Incrementa en 1 los likes de una publicación."""

@@ -114,8 +114,9 @@ class Coleccion(Base):
     path_foto_usuario = Column(String(512), nullable=False) # Ruta a S3, Firebase, etc.
     fecha_captura = Column(DateTime(timezone=True), server_default=func.now())
     notas = Column(Text, nullable=True)
-    latitud = Column(Float, nullable = True)
-    longitud = Column(Float, nullable = True)
+    latitud = Column(Float, nullable=True)
+    longitud = Column(Float, nullable=True)
+    es_publica = Column(Boolean, default=True)
 
     # --- Claves Foráneas ---
     # Aquí definimos las columnas que 'conectan' las tablas

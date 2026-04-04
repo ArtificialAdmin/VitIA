@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import '../gallery/catalogo_page.dart';
 import '../capture/foto_page.dart';
 import '../library/foro_page.dart';
+import '../map/mapa_colecciones_page.dart';
 import 'inicio_screen.dart';
 import 'perfil_page.dart';
 import '../../core/api_client.dart';
@@ -55,6 +56,7 @@ class _HomepageState extends State<HomePage> {
           },
         ),
         const FotoPage(),
+        const MapaColeccionesPage(),
         // CAMBIO: Ahora pasamos el callback al catálogo
         CatalogoPage(
           initialTab: 0,
@@ -269,18 +271,25 @@ class _HomepageState extends State<HomePage> {
                       color: currentIndex == 1 ? Colors.black : Colors.white),
                 ),
                 GButton(
+                  icon: Icons.map,
+                  iconSize: 0,
+                  leading: Image.asset('assets/mapa/icon_map.png',
+                      width: 30,
+                      color: currentIndex == 2 ? Colors.black : Colors.white),
+                ),
+                GButton(
                   icon: Icons.menu_book,
                   iconSize: 0,
                   leading: Image.asset('assets/navbar/icon_nav_catalogo.png',
                       width: 30,
-                      color: currentIndex == 2 ? Colors.black : Colors.white),
+                      color: currentIndex == 3 ? Colors.black : Colors.white),
                 ),
                 GButton(
                   icon: Icons.forum,
                   iconSize: 0,
                   leading: Image.asset('assets/navbar/icon_nav_foro.png',
                       width: 30,
-                      color: currentIndex == 3 ? Colors.black : Colors.white),
+                      color: currentIndex == 4 ? Colors.black : Colors.white),
                 ),
               ],
             ),

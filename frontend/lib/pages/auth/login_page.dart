@@ -24,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   void _showServerConfigDialog(BuildContext context) {
     // Controlador con la URL actual o la por defecto
     final TextEditingController urlCtrl = TextEditingController(
-      text: UserSession.baseUrl ?? 'http://192.168.0.105:8000',
+      text: UserSession.baseUrl ?? 'http://127.0.0.1:8000',
     );
 
     showDialog(
@@ -36,28 +36,7 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // OPCIÓN 1: RENDER
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.cloud_done),
-                label: const Text("Usar Render (Online)"),
-                onPressed: () async {
-                  await UserSession.setBaseUrl(""); // Borra custom URL
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Conectado a Servidor Online")));
-                  setState(() {});
-                },
-              ),
-
-              const Divider(height: 30, thickness: 1),
-
-              // OPCIÓN 2: LOCAL
-              const Text("O usa tu Servidor Local:",
+              const Text("Configura tu Servidor Local:",
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               TextField(
@@ -191,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Indicador de estado
                 Text(
-                  "Conectado a: ${UserSession.baseUrl?.isNotEmpty == true ? UserSession.baseUrl : 'Render (Online)'}",
+                  "Conectado a: ${UserSession.baseUrl?.isNotEmpty == true ? UserSession.baseUrl : 'Localhost (Default)'}",
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),

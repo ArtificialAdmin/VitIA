@@ -7,6 +7,7 @@ import '../../core/api_client.dart';
 import '../../core/services/api_config.dart';
 import '../../core/services/user_sesion.dart';
 
+
 class CreatePostPage extends StatefulWidget {
   final VoidCallback? onPostCreated;
   final VoidCallback? onCancel;
@@ -26,6 +27,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   final ImagePicker _picker = ImagePicker();
+  
+
 
   @override
   void initState() {
@@ -179,6 +182,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+
                               TextField(
                                 controller: _titleController,
                                 style: const TextStyle(
@@ -324,6 +328,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
                           ),
                         ),
                       ),
+
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -349,13 +355,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
                     label: const Text("Etiquetar",
                         style: TextStyle(color: Colors.black54)),
                   ),
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.location_on_outlined,
-                        size: 20, color: Colors.black54),
-                    label: const Text("Ubicación",
-                        style: TextStyle(color: Colors.black54)),
-                  ),
+
                 ],
               ),
             ),

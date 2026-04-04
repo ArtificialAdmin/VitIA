@@ -149,6 +149,17 @@ class ApiClient {
     }
   }
 
+  // Obtener las colecciones para el mapa (Solo coordenadas)
+  Future<List<dynamic>> getColeccionesMapa({String modo = 'publico'}) async {
+    try {
+      final response = await _dio.get('/coleccion/mapa', queryParameters: {'modo': modo});
+      return response.data as List<dynamic>;
+    } catch (e) {
+      print("Error al obtener colecciones para el mapa: $e");
+      return [];
+    }
+  }
+
   // 2. Obtener mis hilos (Solo usuario actual)
   Future<List<dynamic>> getUserPublicaciones() async {
     try {
@@ -160,14 +171,18 @@ class ApiClient {
     }
   }
 
-  // 3. Crear nueva publicación (con soporte para imagen)
+  // 3. Crear nueva publicación (con soporte para imagen y ubicación)
   Future<void> createPublicacion(String titulo, String texto,
-      {XFile? imageFile}) async {
+      {XFile? imageFile, double? latitud, double? longitud, bool esPublica = true}) async {
     try {
       final Map<String, dynamic> dataMap = {
         "titulo": titulo,
         "texto": texto,
+        "es_publica": esPublica.toString(),
       };
+
+      if (latitud != null) dataMap["latitud"] = latitud;
+      if (longitud != null) dataMap["longitud"] = longitud;
 
       if (imageFile != null) {
         final bytes = await imageFile.readAsBytes();

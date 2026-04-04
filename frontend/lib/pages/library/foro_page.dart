@@ -7,6 +7,7 @@ import 'create_post_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/vitia_header.dart';
 
+
 class ForoPage extends StatefulWidget {
   const ForoPage({super.key});
 
