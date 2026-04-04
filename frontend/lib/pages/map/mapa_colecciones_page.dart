@@ -110,7 +110,6 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
   void _showPostPreview(Map<String, dynamic> col) {
     String? imageUrl = col['path_foto_usuario'];
     String titulo = col['variedad'] != null ? col['variedad']['nombre'] : 'Colección';
-    String? notas = col['notas'];
     
     // Propietario (Author)
     final prop = col['propietario'];
@@ -118,7 +117,6 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
     if (prop != null) {
       autor = "${prop['nombre']} ${prop['apellidos']}";
     }
-
     // Fecha
     String fechaStr = "Fecha desconocida";
     if (col['fecha_captura'] != null) {
@@ -199,20 +197,11 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
                   const Icon(Icons.person_outline, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    "Por $autor",
+                    autor,
                     style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
-              if (notas != null && notas.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text("Descripción", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                const SizedBox(height: 4),
-                Text(
-                  notas,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14, height: 1.4),
-                ),
-              ],
               const SizedBox(height: 20),
               const Divider(),
               const SizedBox(height: 12),
@@ -356,11 +345,28 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
           
                               return Marker(
                                 point: LatLng(lat.toDouble(), lon.toDouble()),
-                                width: 50,
-                                height: 50,
+                                width: 55,
+                                height: 55,
                                 child: GestureDetector(
                                   onTap: () => _showPostPreview(col),
-                                  child: Icon(Icons.location_on, color: Colors.red.shade700, size: 40)
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 3),
+                                      boxShadow: const [
+                                        BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                                      ],
+                                      color: const Color(0xFF142018),
+                                    ),
+                                    child: ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: col['path_foto_usuario'] ?? '',
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                                        errorWidget: (context, url, error) => const Icon(Icons.image, color: Colors.white, size: 20),
+                                      ),
+                                    ),
+                                  ),
                                 )
                               );
                             }).whereType<Marker>().toList(),

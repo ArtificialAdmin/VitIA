@@ -1,7 +1,7 @@
 // lib/pages/main_layout/home_page.dart
 
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
+
 
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:dio/dio.dart';
@@ -237,72 +237,44 @@ class _HomepageState extends State<HomePage> {
     return Scaffold(
       extendBody: true,
       body: _screens[currentIndex],
-      bottomNavigationBar: Container(
-        height: 110,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withOpacity(0),
-              Colors.white.withOpacity(0.6),
-              Colors.white.withOpacity(0.9),
+      // BARRA DE NAVEGACIÓN FLOTANTE (OPERATIVA)
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
+        child: Container(
+          decoration: BoxDecoration(
+            color: darkBarColor,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: darkBarColor.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
             ],
           ),
-        ),
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: darkBarColor.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: darkBarColor.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-                  child: GNav(
-                    gap: 8,
-                    color: Colors.white70,
-                    activeColor: Colors.white,
-                    tabBackgroundColor: activeTabColor,
-                    tabBorderRadius: 100,
-                    tabShadow: const [],
-                    padding: const EdgeInsets.all(12),
-                    selectedIndex: currentIndex,
-                    onTabChange: (index) {
-                      setState(() => currentIndex = index);
-                    },
-
-              // 🚨 SUSTITUCIÓN DE ICONOS: Usamos Image.asset de la carpeta assets/navbar
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+            child: GNav(
+              gap: 8,
+              color: Colors.white70,
+              activeColor: Colors.white,
+              tabBackgroundColor: activeTabColor,
+              tabBorderRadius: 100,
+              tabShadow: const [],
+              padding: const EdgeInsets.all(12),
+              selectedIndex: currentIndex,
+              onTabChange: (index) {
+                setState(() => currentIndex = index);
+              },
               tabs: [
                 GButton(
                   icon: Icons.home,
-                  iconSize: 0, // Deshabilitar el icono de Material
+                  iconSize: 0,
                   leading: Image.asset('assets/navbar/icon_nav_home.png',
                       width: 30,
-                      color: currentIndex == 0
-                          ? Colors.black
-                          : Colors.white // Color de activo/inactivo
-                      ),
+                      color: currentIndex == 0 ? Colors.black : Colors.white),
                 ),
-                // CAMBIO: Ocultamos el botón de cámara de la barra si ahora es un FAB flotante
-                // O lo mantenemos si queremos redundancia. El usuario dijo "que el boton de hacer foto se mantenga arriba".
-                // Si ponemos un FAB central, ¿qué hacemos con la barra?
-                // Opción 1: Mantener los 4 items y el FAB flota encima (tapando quizás el de cámara).
-                // Opción 2: Dejar hueco.
-                // Vamos a mantener la barra tal cual y el FAB flotará "encima", aunque visualmente puede chocar.
-                // REVISIÓN: El usuario dijo "mueva por la barra de herramientas que ya existe".
-                // Si ponemos el FAB en `centerDocked`, quedará encima.
                 GButton(
                   icon: Icons.camera_alt_outlined,
                   iconSize: 0,
@@ -336,9 +308,6 @@ class _HomepageState extends State<HomePage> {
           ),
         ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
 }
