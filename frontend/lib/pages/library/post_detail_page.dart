@@ -19,7 +19,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
   
   // State local para likes (optimistic UI)
   late int _likesCount;
-  bool _isLiked = false; // Como no tenemos seguimiento por usuario real, será local por sesión de pantalla
+  bool _isLiked = false;
+  bool _initialLikedState = false; // Para detectar cambios al volver atrás
 
   final TextEditingController _commentCtrl = TextEditingController();
   bool _isPostingComment = false;
@@ -31,7 +32,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (UserSession.token != null) {
       _apiClient.setToken(UserSession.token!);
     }
-    _likesCount = widget.post['likes'];
+    _likesCount = widget.post['likes'] ?? 0;
+    _isLiked = widget.post['isLiked'] ?? false;
+    _initialLikedState = _isLiked;
     _cargarComentarios();
   }
 
@@ -144,7 +147,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: BackButton(
+          color: Colors.black,
+          onPressed: () {
+            // Retornar true si ha cambiado el estado de like para refrescar el feed
+            Navigator.pop(context, _isLiked != _initialLikedState);
+          },
+        ),
         title: const Text("Hilo", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           if (widget.post['isMine'] == true)
@@ -169,7 +178,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: Colors.grey.shade200,
-                          child: const Icon(Icons.person, color: Colors.grey),
+                          backgroundImage: widget.post['avatar'] != null
+                              ? NetworkImage(widget.post['avatar'])
+                              : null,
+                          child: widget.post['avatar'] == null
+                              ? const Icon(Icons.person, color: Colors.grey)
+                              : null,
                         ),
                         const SizedBox(width: 12),
                         Column(

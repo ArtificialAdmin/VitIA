@@ -134,6 +134,7 @@ class _ForoPageState extends State<ForoPage>
             'comments': (item['comentarios'] as List?)?.length ?? 0,
             'isMine': authorId != null && authorId == UserSession.userId,
             'isLiked': item['is_liked'] ?? false,
+            'avatar': item['autor'] != null ? (item['autor']['path_foto_perfil'] ?? item['autor']['foto_perfil'] ?? item['autor']['link_foto']) : null,
           };
         })
         .toList()
@@ -188,10 +189,16 @@ class _ForoPageState extends State<ForoPage>
     if (fechaIso == null) return "Reciente";
     try {
       final fecha = DateTime.parse(fechaIso);
-      final diferencia = DateTime.now().difference(fecha);
-      if (diferencia.inDays > 0) return "Hace ${diferencia.inDays} días";
-      if (diferencia.inHours > 0) return "Hace ${diferencia.inHours} h";
-      return "Hace unos instantes";
+      final ahora = DateTime.now();
+      
+      final dia = fecha.day.toString().padLeft(2, '0');
+      final mes = fecha.month.toString().padLeft(2, '0');
+      
+      if (fecha.year == ahora.year) {
+        return "$dia/$mes";
+      } else {
+        return "$dia/$mes/${fecha.year}";
+      }
     } catch (e) {
       return "Reciente";
     }
@@ -501,9 +508,7 @@ class _ForoPageState extends State<ForoPage>
                                                 MaterialPageRoute(
                                                     builder: (context) =>
                                                         PostDetailPage(
-                                                            post:
-                                                                _publicacionesTodas[
-                                                                    index])),
+                                                            post: filtered[index])),
                                               );
                                               if (result == true && mounted) {
                                                 _cargarDatos();
@@ -762,9 +767,13 @@ class _PopularCardState extends State<_PopularCard> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: Colors.grey.shade300,
-                  child:
-                      const Icon(Icons.person, color: Colors.white, size: 20),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage: widget.post['avatar'] != null
+                      ? NetworkImage(widget.post['avatar'])
+                      : null,
+                  child: widget.post['avatar'] == null
+                      ? const Icon(Icons.person, color: Colors.white, size: 20)
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -913,9 +922,13 @@ class _RecentCardState extends State<_RecentCard> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  // Color aleatorio o imagen dummy si no hay avatar real
                   backgroundColor: Colors.brown.shade100,
-                  child: const Icon(Icons.person, color: Colors.brown),
+                  backgroundImage: widget.post['avatar'] != null
+                      ? NetworkImage(widget.post['avatar'])
+                      : null,
+                  child: widget.post['avatar'] == null
+                      ? const Icon(Icons.person, color: Colors.brown)
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

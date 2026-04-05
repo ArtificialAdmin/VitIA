@@ -227,6 +227,7 @@ def delete_publicacion(db: Session, db_publicacion: models.Publicacion):
 def get_publicaciones(db: Session, skip: int = 0, limit: int = 100):
     """Obtiene una lista paginada de todas las publicaciones del foro."""
     return db.query(models.Publicacion)\
+             .options(joinedload(models.Publicacion.autor))\
              .order_by(models.Publicacion.fecha_publicacion.desc())\
              .offset(skip)\
              .limit(limit)\
@@ -266,6 +267,7 @@ def unlike_publicacion(db: Session, id_publicacion: int):
 def get_user_publicaciones(db: Session, id_usuario: int, skip: int = 0, limit: int = 100):
     """Obtiene una lista paginada de las publicaciones de un usuario específico."""
     return db.query(models.Publicacion)\
+             .options(joinedload(models.Publicacion.autor))\
              .filter(models.Publicacion.id_usuario == id_usuario)\
              .order_by(models.Publicacion.fecha_publicacion.desc())\
              .offset(skip)\

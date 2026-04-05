@@ -19,7 +19,7 @@ class BaseConfig(BaseModel):
     que lea los datos incluso si son de un modelo de SQLAlchemy
     (ej. usuario.id) y no solo un diccionario (ej. usuario['id']).
     """
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # -----------------------------------------------------
@@ -79,8 +79,9 @@ class AutorColeccion(BaseConfig):
     id_usuario: int
     nombre: str
     apellidos: str
+    path_foto_perfil: Optional[str] = None
 
-# -----------------------------------------------------
+# ----
 # Esquemas: Coleccion (Personal del Usuario)
 # -----------------------------------------------------
 
@@ -147,6 +148,7 @@ class AutorPublicacion(BaseConfig):
     id_usuario: int
     nombre: str
     apellidos: str
+    path_foto_perfil: Optional[str] = None
 
 class Publicacion(PublicacionBase, BaseConfig):
     """Esquema para LEER una publicación."""
@@ -230,9 +232,11 @@ class ComentarioCreate(ComentarioBase):
 
 # Schema para mostrar el autor del comentario (reducido)
 class AutorComentario(BaseConfig):
+    """Un esquema reducido para mostrar solo info pública del autor."""
     id_usuario: int
     nombre: str
     apellidos: str
+    path_foto_perfil: Optional[str] = None
 
 class Comentario(ComentarioBase, BaseConfig):
     id_comentario: int
