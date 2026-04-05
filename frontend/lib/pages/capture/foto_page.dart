@@ -22,6 +22,7 @@ class GroupedResult {
   final String location;
   final double? latitude;
   final double? longitude;
+  bool isPublic; // <--- NUEVO: Atributo mutable para la privacidad
 
   GroupedResult(
     this.variety,
@@ -32,6 +33,7 @@ class GroupedResult {
     required this.location,
     this.latitude,
     this.longitude,
+    this.isPublic = true, // <--- Valor por defecto
   }) : selectedPaths = selected ?? photos.map((e) => e.path).toSet();
 }
 
@@ -398,6 +400,7 @@ class _FotoPageState extends State<FotoPage> with TickerProviderStateMixin {
               "Identificado con VitIA (${currentGroup.confidence.toStringAsFixed(1)}%)",
           lat: currentGroup.latitude,
           lon: currentGroup.longitude,
+          esPublica: currentGroup.isPublic, // <--- Pasamos el estado del toggle
         );
         successCount++;
       }
@@ -830,6 +833,57 @@ class _FotoPageState extends State<FotoPage> with TickerProviderStateMixin {
                                       style: const TextStyle(
                                           fontSize: 12, color: Colors.grey)),
                                 ],
+                              ),
+                              const SizedBox(height: 12),
+                              // --- SELECTOR DE PRIVACIDAD ---
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          group.isPublic
+                                              ? Icons.public
+                                              : Icons.lock_outline,
+                                          size: 18,
+                                          color: group.isPublic
+                                              ? const Color(0xFF8B8036)
+                                              : Colors.grey,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          group.isPublic
+                                              ? "Visibilidad: Pública"
+                                              : "Visibilidad: Privada",
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: group.isPublic
+                                                ? Colors.black87
+                                                : Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Switch(
+                                      value: group.isPublic,
+                                      activeColor: const Color(0xFF8B8036),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          group.isPublic = val;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 12),
                               // BUTTON TO SAVE

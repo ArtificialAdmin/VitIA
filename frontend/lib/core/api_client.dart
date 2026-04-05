@@ -70,6 +70,7 @@ class ApiClient {
     String? notas,
     double? lat,
     double? lon,
+    bool esPublica = true, // <--- NUEVO CAMPO
   }) async {
     try {
       final bytes = await imageFile.readAsBytes();
@@ -81,6 +82,7 @@ class ApiClient {
         if (notas != null) "notas": notas,
         if (lat != null) "latitud": lat,
         if (lon != null) "longitud": lon,
+        "es_publica": esPublica.toString(), // <--- Enviamos la privacidad
       });
 
       await _dio.post('/coleccion/upload', data: formData);

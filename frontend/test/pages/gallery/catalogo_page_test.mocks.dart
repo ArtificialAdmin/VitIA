@@ -71,6 +71,7 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
     String? notas,
     double? lat,
     double? lon,
+    bool? esPublica,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -82,6 +83,7 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
             #notas: notas,
             #lat: lat,
             #lon: lon,
+            #esPublica: esPublica,
           },
         ),
         returnValue: _i3.Future<void>.value(),
