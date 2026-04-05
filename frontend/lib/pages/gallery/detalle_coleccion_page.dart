@@ -25,6 +25,7 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
 
   bool _isUpdating = false;
   late TextEditingController _notasController;
+  bool _esPublica = true; // <--- NUEVO ESTADO
   LatLng? _ubicacionActual;
   final MapController _mapController = MapController();
 
@@ -40,6 +41,11 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
         (_itemActual['longitud'] as num).toDouble(),
       );
     }
+    // Robust boolean interpretation for private/public
+    final val = _itemActual['es_publica'];
+    _esPublica = (val == true || val == 1 || val == "true");
+
+    _notasController.addListener(_onNotasChanged);
 
     _apiClient = ApiClient(getBaseUrl());
     if (UserSession.token != null) {
@@ -49,9 +55,46 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
 
   @override
   void dispose() {
+    _notasController.removeListener(_onNotasChanged);
     _notasController.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _onNotasChanged() {
+    setState(() {}); // Forzar rebuild para actualizar estado del botón
+  }
+
+  // --- LÓGICA DE DETECCIÓN DE CAMBIOS ---
+  bool get _hasChanges {
+    // 1. Notas
+    final originalNotas = _itemActual['descripcion'] ?? "";
+    bool notasChanged = _notasController.text != originalNotas;
+
+    // 2. Privacidad
+    final val = _itemActual['es_publica'];
+    final bool originalPublica = (val == true || val == 1 || val == "true");
+    bool publicaChanged = _esPublica != originalPublica;
+
+    // 3. Ubicación
+    double? origLat = (_itemActual['latitud'] as num?)?.toDouble();
+    double? origLon = (_itemActual['longitud'] as num?)?.toDouble();
+
+    bool locationChanged = false;
+    if (origLat != null && origLon != null) {
+      if (_ubicacionActual == null) {
+        locationChanged = true;
+      } else {
+        // Tolerancia pequeña para errores de precisión de punto flotante
+        locationChanged =
+            ((_ubicacionActual!.latitude - origLat).abs() > 0.000001 ||
+                (_ubicacionActual!.longitude - origLon).abs() > 0.000001);
+      }
+    } else if (_ubicacionActual != null) {
+      locationChanged = true;
+    }
+
+    return notasChanged || publicaChanged || locationChanged;
   }
 
   // --- GUARDAR CAMBIOS ---
@@ -84,6 +127,7 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
     try {
       final updates = <String, dynamic>{
         'notas': _notasController.text,
+        'es_publica': _esPublica, // <--- INCLUIR EN ACTUALIZACIÓN
       };
       if (_ubicacionActual != null) {
         updates['latitud'] = _ubicacionActual!.latitude;
@@ -94,6 +138,7 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
 
       setState(() {
         _itemActual['descripcion'] = _notasController.text;
+        _itemActual['es_publica'] = _esPublica; // <--- ACTUALIZAR LOCALMENTE
         _isUpdating = false;
       });
 
@@ -233,9 +278,14 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
-                        : const Icon(Icons.save, color: Colors.white),
-                    onPressed: _isUpdating ? null : _guardarCambios,
-                    tooltip: "Guardar cambios",
+                        : Icon(Icons.save,
+                            color: _hasChanges ? Colors.white : Colors.white54),
+                    onPressed: (_hasChanges && !_isUpdating)
+                        ? _guardarCambios
+                        : null,
+                    tooltip: _hasChanges
+                        ? "Guardar cambios"
+                        : "No hay cambios para guardar",
                   ),
                 ),
               ],
@@ -339,6 +389,70 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.all(16),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // --- SELECTOR DE PRIVACIDAD EN EDICIÓN ---
+                      _buildSectionTitle("Privacidad"),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _esPublica
+                                        ? Icons.public
+                                        : Icons.lock_outline,
+                                    color: _esPublica
+                                        ? colorTema
+                                        : Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _esPublica ? "Pública" : "Privada",
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16),
+                                        ),
+                                        Text(
+                                          _esPublica
+                                              ? "Visible para todos en el mapa global"
+                                              : "Solo visible para ti",
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _esPublica,
+                              activeColor: colorTema,
+                              onChanged: (val) {
+                                setState(() => _esPublica = val);
+                              },
+                            ),
+                          ],
                         ),
                       ),
 
