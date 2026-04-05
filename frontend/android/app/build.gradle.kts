@@ -49,9 +49,3 @@ flutter {
     source = "../.."
 }
 
-// Workaround for Windows file lock issue in NDK
-tasks.whenTaskAdded {
-    if (name == "stripReleaseDebugSymbols") {
-        enabled = false
-    }
-}
