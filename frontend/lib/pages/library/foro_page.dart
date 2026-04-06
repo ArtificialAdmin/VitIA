@@ -1,147 +1,38 @@
 import 'package:flutter/material.dart';
-import '../../core/api_client.dart';
-import '../../core/services/api_config.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/forum_provider.dart';
 import '../../core/services/user_sesion.dart';
 import 'post_detail_page.dart';
 import 'create_post_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/vitia_header.dart';
 
-
-class ForoPage extends StatefulWidget {
+class ForoPage extends ConsumerStatefulWidget {
   const ForoPage({super.key});
 
   @override
-  State<ForoPage> createState() => _ForoPageState();
+  ConsumerState<ForoPage> createState() => _ForoPageState();
 }
 
-class _ForoPageState extends State<ForoPage>
+class _ForoPageState extends ConsumerState<ForoPage>
     with SingleTickerProviderStateMixin {
-  late ApiClient _apiClient;
-  bool _isCreatingPost = false; // Estado para controlar la vista de crear post
-
-  // Variables de estado restauradas
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _publicacionesTodas = [];
-  List<Map<String, dynamic>> _publicacionesMias = [];
-  List<Map<String, dynamic>>?
-      _publicacionesPopulares; // Nullable para evitar error "undefined" en hot reload
   late TabController _tabController;
-  bool _isSearching = false; // RESTAURADO
+  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
-
-  // NUEVO: Estado de ordenación
-  String _currentSort =
-      'newest'; // 'newest', 'oldest', 'likes', 'comments', 'author'
+  String _currentSort = 'newest';
+  bool _isCreatingPost = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _apiClient = ApiClient(getBaseUrl());
-    if (UserSession.token != null) {
-      _apiClient.setToken(UserSession.token!);
-    }
-    _cargarDatos();
   }
 
-  Future<void> _cargarDatos() async {
-    setState(() => _isLoading = true);
-    try {
-      final listaTodas = await _apiClient.getPublicaciones();
-
-      List<dynamic> listaMias = [];
-      if (UserSession.token != null) {
-        try {
-          // 1. Obtener UserID si no lo tenemos
-          if (UserSession.userId == null) {
-            final meData = await _apiClient.getMe();
-            UserSession.setUserId(meData['id_usuario']);
-          }
-
-          listaMias = await _apiClient.getUserPublicaciones();
-        } catch (e) {
-          debugPrint("Error loading user posts: $e");
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _publicacionesTodas = _mapearPublicaciones(listaTodas);
-          _publicacionesMias = _mapearPublicaciones(listaMias);
-
-          // Crear lista de populares ordenada por Likes DESC, luego Comentarios DESC
-          _publicacionesPopulares =
-              List<Map<String, dynamic>>.from(_publicacionesTodas);
-          _publicacionesPopulares!.sort((a, b) {
-            final likesA = (a['likes'] as num?)?.toInt() ?? 0;
-            final likesB = (b['likes'] as num?)?.toInt() ?? 0;
-            final compareLikes = likesB.compareTo(likesA); // Descendente
-
-            if (compareLikes != 0) {
-              return compareLikes;
-            } else {
-              // Si empata en likes, ordenar por comentarios
-              final commentsA = (a['comments'] as num?)?.toInt() ?? 0;
-              final commentsB = (b['comments'] as num?)?.toInt() ?? 0;
-              return commentsB.compareTo(commentsA); // Descendente
-            }
-          });
-
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading forum: $e");
-      if (mounted) setState(() => _isLoading = false);
-    }
+  void _cargarDatos() {
+    ref.read(forumProvider.notifier).reload();
   }
 
-  List<Map<String, dynamic>> _mapearPublicaciones(List<dynamic> rawList) {
-    return rawList
-        .map((item) {
-          String? imagenUrl;
-          if (item['links_fotos'] != null &&
-              (item['links_fotos'] as List).isNotEmpty) {
-            imagenUrl = item['links_fotos'][0];
-          }
-
-          String nombreUsuario = "Anónimo";
-          int? authorId; // Para verificar isMine
-
-          if (item['autor'] != null) {
-            final autor = item['autor'];
-            nombreUsuario =
-                "${autor['nombre'] ?? 'Usuario'} ${autor['apellidos'] ?? ''}"
-                    .trim();
-            authorId = autor['id_usuario'];
-          } else if (item['id_usuario'] != null) {
-            // Fallback si la API devuelve id_usuario en root
-            nombreUsuario = "Usuario #${item['id_usuario']}";
-            authorId = item['id_usuario'];
-          }
-
-          return {
-            'id': item['id_publicacion'],
-            'titulo': item['titulo'] ?? '',
-            'text': item['texto'] ?? '',
-            'user': nombreUsuario,
-            'time': _formatearFecha(
-                item['fecha_publicacion'] ?? item['fecha_creacion']),
-            'image': imagenUrl,
-            'likes': item['likes'] ?? 0,
-            'comments': (item['comentarios'] as List?)?.length ?? 0,
-            'isMine': authorId != null && authorId == UserSession.userId,
-            'isLiked': item['is_liked'] ?? false,
-            'avatar': item['autor'] != null ? (item['autor']['path_foto_perfil'] ?? item['autor']['foto_perfil'] ?? item['autor']['link_foto']) : null,
-          };
-        })
-        .toList()
-        .cast<Map<String, dynamic>>();
-  }
-
-  // Método solo para filtrar por texto (sin reordenar)
   List<Map<String, dynamic>> _filterByText(List<Map<String, dynamic>> list) {
     if (_searchQuery.isEmpty) return list;
     final query = _searchQuery.toLowerCase();
@@ -156,13 +47,10 @@ class _ForoPageState extends State<ForoPage>
   }
 
   List<Map<String, dynamic>> _getFilteredList(List<Map<String, dynamic>> list) {
-    // 1. Filtrar por texto (usando helper)
     List<Map<String, dynamic>> temp = _filterByText(list);
 
-    // 2. Ordenar (Solo aplica a las listas principales, no a Populares si lo llamamos con _filterByText)
     switch (_currentSort) {
       case 'oldest':
-        // Asumimos que la lista original viene 'newest' por defecto del backend.
         temp = List.from(temp.reversed);
         break;
       case 'likes':
@@ -176,32 +64,10 @@ class _ForoPageState extends State<ForoPage>
         temp.sort(
             (a, b) => a['user'].toString().compareTo(b['user'].toString()));
         break;
-      case 'newest':
       default:
-        // Default order
         break;
     }
-
     return temp;
-  }
-
-  String _formatearFecha(String? fechaIso) {
-    if (fechaIso == null) return "Reciente";
-    try {
-      final fecha = DateTime.parse(fechaIso);
-      final ahora = DateTime.now();
-      
-      final dia = fecha.day.toString().padLeft(2, '0');
-      final mes = fecha.month.toString().padLeft(2, '0');
-      
-      if (fecha.year == ahora.year) {
-        return "$dia/$mes";
-      } else {
-        return "$dia/$mes/${fecha.year}";
-      }
-    } catch (e) {
-      return "Reciente";
-    }
   }
 
   void _mostrarDialogoCrear() {
@@ -210,7 +76,6 @@ class _ForoPageState extends State<ForoPage>
           const SnackBar(content: Text("Debes iniciar sesión para publicar.")));
       return;
     }
-    // Cambiamos el estado para mostrar la vista de creación embebida
     setState(() => _isCreatingPost = true);
   }
 
@@ -235,8 +100,7 @@ class _ForoPageState extends State<ForoPage>
                   left: 24.0,
                   right: 24.0,
                   top: 24.0,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom +
-                      24.0, // Safe area for keyboard/nav
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24.0,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -258,8 +122,6 @@ class _ForoPageState extends State<ForoPage>
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // SECCIÓN: TIEMPO
                     const Text("Fecha",
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -273,8 +135,6 @@ class _ForoPageState extends State<ForoPage>
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // SECCIÓN: INTERACCIÓN
                     const Text("Interacción",
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -289,8 +149,6 @@ class _ForoPageState extends State<ForoPage>
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // SECCIÓN: OTROS
                     const Text("Otros",
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.grey)),
@@ -329,8 +187,10 @@ class _ForoPageState extends State<ForoPage>
     );
   }
 
+  @override
   Widget build(BuildContext context) {
-    // Si estamos creando un post, interceptamos el "Back" para solo cerrar el modo de creación
+    final forumState = ref.watch(forumProvider);
+
     return PopScope(
       canPop: !_isCreatingPost,
       onPopInvoked: (didPop) {
@@ -341,14 +201,10 @@ class _ForoPageState extends State<ForoPage>
         backgroundColor: const Color(0xFFFAFAFA),
         body: Stack(
           children: [
-            // CONTENIDO PRINCIPAL (Normal)
             Padding(
               padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
               child: Column(
                 children: [
-                  // 1. HEADER GRANDE (FIJO)
-                  // 1. HEADER GRANDE (FIJO)
-                  // 1. HEADER GRANDE
                   VitiaHeader(
                     title: "Comunidad",
                     actionIcon: IconButton(
@@ -367,8 +223,6 @@ class _ForoPageState extends State<ForoPage>
                       },
                     ),
                   ),
-
-                  // TABS PERSONALIZADOS (Estilo Biblioteca)
                   Container(
                     margin:
                         const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -403,8 +257,6 @@ class _ForoPageState extends State<ForoPage>
                       ],
                     ),
                   ),
-
-                  // BARRA DE BÚSQUEDA Y FILTROS (Movid a AQUÍ, debajo de tabs)
                   ClipRect(
                     child: AnimatedSize(
                       duration: const Duration(milliseconds: 300),
@@ -412,227 +264,209 @@ class _ForoPageState extends State<ForoPage>
                       child: SizedBox(
                         height: _isSearching ? null : 0,
                         width: double.infinity,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0, vertical: 10),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _searchQuery = value;
-                                    });
-                                  },
-                                  autofocus:
-                                      true, // Mantenemos autofocus al abrir
-                                  decoration: InputDecoration(
-                                    hintText: "Buscar...",
-                                    prefixIcon: const Icon(Icons.search,
-                                        color: Colors.grey),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade200,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                      borderSide: BorderSide.none,
+                        child: _isSearching
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _searchController,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _searchQuery = value;
+                                          });
+                                        },
+                                        autofocus: true,
+                                        decoration: InputDecoration(
+                                          hintText: "Buscar...",
+                                          prefixIcon: const Icon(Icons.search,
+                                              color: Colors.grey),
+                                          filled: true,
+                                          fillColor: Colors.grey.shade200,
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(30),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 20),
+                                        ),
+                                      ),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 20),
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: InkWell(
+                                        onTap: () =>
+                                            _mostrarMenuFiltros(context),
+                                        customBorder: const CircleBorder(),
+                                        child: const Icon(Icons.sort,
+                                            color: Colors.black54),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: InkWell(
-                                  onTap: () => _mostrarMenuFiltros(context),
-                                  customBorder: const CircleBorder(),
-                                  child: const Icon(Icons.sort,
-                                      color: Colors.black54),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
                   ),
-
                   Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // --- TAB 1: TODOS (Populares + Recientes) ---
-                        CustomScrollView(
-                          slivers: [
-                            // POPULARES
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                child: Text("Populares",
-                                    style: GoogleFonts.lora(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2A2A2A))),
-                              ),
-                            ),
-                            SliverToBoxAdapter(
-                              child: SizedBox(
-                                height: 180,
-                                child: _isLoading
-                                    ? const Center(
-                                        child: CircularProgressIndicator())
-                                    : ListView.builder(
+                    child: forumState.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(child: Text("Error: $err")),
+                      data: (allPosts) {
+                        final popularPosts = ref.watch(popularPostsProvider);
+                        final myPosts = ref.watch(myPostsProvider);
+
+                        return TabBarView(
+                          controller: _tabController,
+                          children: [
+                            RefreshIndicator(
+                              onRefresh: () async =>
+                                  ref.read(forumProvider.notifier).reload(),
+                              child: CustomScrollView(
+                                slivers: [
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          20, 10, 20, 10),
+                                      child: Text("Populares",
+                                          style: GoogleFonts.lora(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2A2A2A))),
+                                    ),
+                                  ),
+                                  SliverToBoxAdapter(
+                                    child: SizedBox(
+                                      height: 180,
+                                      child: ListView.builder(
                                         scrollDirection: Axis.horizontal,
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 16),
-                                        itemCount: _filterByText(
-                                                _publicacionesPopulares ?? [])
+                                        itemCount: _filterByText(popularPosts)
                                             .take(5)
                                             .length,
                                         itemBuilder: (context, index) {
-                                          final filtered = _filterByText(
-                                              _publicacionesPopulares ?? []);
+                                          final filteredPop =
+                                              _filterByText(popularPosts);
                                           return _PopularCard(
-                                            post: filtered[index],
-                                            onTap: () async {
-                                              final result =
-                                                  await Navigator.push(
+                                            post: filteredPop[index],
+                                            onTap: () {
+                                              Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
                                                         PostDetailPage(
-                                                            post: filtered[index])),
+                                                            post: filteredPop[
+                                                                index])),
                                               );
-                                              if (result == true && mounted) {
-                                                _cargarDatos();
-                                              }
                                             },
                                           );
                                         },
                                       ),
-                              ),
-                            ),
-
-                            // RECIENTES (Encabezado)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                                child: Text("Recientes",
-                                    style: GoogleFonts.lora(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2A2A2A))),
-                              ),
-                            ),
-
-                            // LISTA VERTICAL (TODOS)
-                            _isLoading
-                                ? const SliverToBoxAdapter(
-                                    child: SizedBox(
-                                        height: 200,
-                                        child: Center(
-                                            child:
-                                                CircularProgressIndicator())))
-                                : SliverList(
+                                    ),
+                                  ),
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          20, 20, 20, 10),
+                                      child: Text("Recientes",
+                                          style: GoogleFonts.lora(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2A2A2A))),
+                                    ),
+                                  ),
+                                  SliverList(
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final filteredList = _getFilteredList(
-                                            _publicacionesTodas);
+                                        final filteredAll =
+                                            _getFilteredList(allPosts);
                                         return _RecentCard(
-                                          post: filteredList[index],
-                                          onTap: () async {
-                                            final result = await Navigator.push(
+                                          post: filteredAll[index],
+                                          onTap: () {
+                                            Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                   builder: (context) =>
                                                       PostDetailPage(
-                                                          post: filteredList[
+                                                          post: filteredAll[
                                                               index])),
                                             );
-                                            if (result == true && mounted) {
-                                              _cargarDatos();
-                                            }
                                           },
                                         );
                                       },
                                       childCount:
-                                          _getFilteredList(_publicacionesTodas)
-                                              .length,
+                                          _getFilteredList(allPosts).length,
                                     ),
                                   ),
-                            const SliverToBoxAdapter(
-                                child: SizedBox(height: 160)),
-                          ],
-                        ),
-
-                        // --- TAB 2: TUS HILOS (Solo Recientes Míos) ---
-                        CustomScrollView(
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                                child: Text("Tus publicaciones",
-                                    style: GoogleFonts.lora(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2A2A2A))),
+                                  const SliverToBoxAdapter(
+                                      child: SizedBox(height: 160)),
+                                ],
                               ),
                             ),
-                            _isLoading
-                                ? const SliverToBoxAdapter(
-                                    child: SizedBox(
-                                        height: 200,
-                                        child: Center(
-                                            child:
-                                                CircularProgressIndicator())))
-                                : SliverList(
+                            RefreshIndicator(
+                              onRefresh: () async =>
+                                  ref.read(forumProvider.notifier).reload(),
+                              child: CustomScrollView(
+                                slivers: [
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          20, 20, 20, 10),
+                                      child: Text("Tus publicaciones",
+                                          style: GoogleFonts.lora(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2A2A2A))),
+                                    ),
+                                  ),
+                                  SliverList(
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final filteredList = _getFilteredList(
-                                            _publicacionesMias);
+                                        final filteredMine =
+                                            _getFilteredList(myPosts);
                                         return _RecentCard(
-                                          post: filteredList[index],
-                                          onTap: () async {
-                                            final result = await Navigator.push(
+                                          post: filteredMine[index],
+                                          onTap: () {
+                                            Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                   builder: (context) =>
                                                       PostDetailPage(
-                                                          post: filteredList[
+                                                          post: filteredMine[
                                                               index])),
                                             );
-                                            if (result == true && mounted) {
-                                              _cargarDatos();
-                                            }
                                           },
                                         );
                                       },
                                       childCount:
-                                          _getFilteredList(_publicacionesMias)
-                                              .length,
+                                          _getFilteredList(myPosts).length,
                                     ),
                                   ),
-                            const SliverToBoxAdapter(
-                                child: SizedBox(height: 160)),
+                                  const SliverToBoxAdapter(
+                                      child: SizedBox(height: 160)),
+                                ],
+                              ),
+                            ),
                           ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-
-            // BOTÓN FLOTANTE CREAR HILO (Visible solo si no estamos creando)
             if (!_isCreatingPost)
               Positioned(
                 bottom: 110,
@@ -654,13 +488,10 @@ class _ForoPageState extends State<ForoPage>
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-
-            // VISTA DE CREACIÓN DE POST (SUPERPUESTA)
             if (_isCreatingPost)
               Positioned.fill(
                 child: Container(
-                    color: Colors
-                        .white, // Cubre toda la pantalla (dentro del Scaffold)
+                    color: Colors.white,
                     child: CreatePostPage(
                       onPostCreated: () {
                         setState(() => _isCreatingPost = false);
@@ -680,70 +511,21 @@ class _ForoPageState extends State<ForoPage>
       ),
     );
   }
-
-  // WIDGET ELIMINADO: _buildTabButton ya no es necesario
 }
 
-// TARJETA POPULARES (Diseño Horizontal)
-class _PopularCard extends StatefulWidget {
+class _PopularCard extends ConsumerWidget {
   final Map<String, dynamic> post;
   final VoidCallback onTap;
 
   const _PopularCard({required this.post, required this.onTap});
 
   @override
-  State<_PopularCard> createState() => _PopularCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLiked = post['isLiked'] ?? false;
+    final likes = post['likes'] ?? 0;
 
-class _PopularCardState extends State<_PopularCard> {
-  late int _likes;
-  bool _isLiked = false;
-  late ApiClient _apiClient;
-
-  @override
-  void initState() {
-    super.initState();
-    _likes = widget.post['likes'];
-    _isLiked = widget.post['isLiked'] ?? false;
-    _apiClient = ApiClient(getBaseUrl());
-    if (UserSession.token != null) _apiClient.setToken(UserSession.token!);
-  }
-
-  Future<void> _darLike() async {
-    setState(() {
-      if (_isLiked) {
-        _likes--;
-        _isLiked = false;
-      } else {
-        _likes++;
-        _isLiked = true;
-      }
-    });
-    try {
-      if (_isLiked) {
-        await _apiClient.likePublicacion(widget.post['id']);
-      } else {
-        await _apiClient.unlikePublicacion(widget.post['id']);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          if (_isLiked) {
-            _likes--;
-            _isLiked = false;
-          } else {
-            _likes++;
-            _isLiked = true;
-          }
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Container(
         width: 250,
         margin: const EdgeInsets.only(right: 16, bottom: 10),
@@ -768,10 +550,10 @@ class _PopularCardState extends State<_PopularCard> {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.grey.shade200,
-                  backgroundImage: widget.post['avatar'] != null
-                      ? NetworkImage(widget.post['avatar'])
+                  backgroundImage: post['avatar'] != null
+                      ? NetworkImage(post['avatar'])
                       : null,
-                  child: widget.post['avatar'] == null
+                  child: post['avatar'] == null
                       ? const Icon(Icons.person, color: Colors.white, size: 20)
                       : null,
                 ),
@@ -780,12 +562,12 @@ class _PopularCardState extends State<_PopularCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.post['user'],
+                      Text(post['user'],
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 13)),
-                      Text(widget.post['time'],
+                      Text(post['time'],
                           style: TextStyle(
                               fontSize: 10, color: Colors.grey.shade500)),
                     ],
@@ -794,10 +576,9 @@ class _PopularCardState extends State<_PopularCard> {
               ],
             ),
             const SizedBox(height: 8),
-            if (widget.post['titulo'] != null &&
-                widget.post['titulo'] != '') ...[
+            if (post['titulo'] != null && post['titulo'] != '') ...[
               Text(
-                widget.post['titulo'],
+                post['titulo'],
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style:
@@ -807,7 +588,7 @@ class _PopularCardState extends State<_PopularCard> {
             ],
             Expanded(
               child: Text(
-                widget.post['text'],
+                post['text'],
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -818,20 +599,21 @@ class _PopularCardState extends State<_PopularCard> {
             Row(
               children: [
                 GestureDetector(
-                  onTap: _darLike,
+                  onTap: () =>
+                      ref.read(forumProvider.notifier).toggleLike(post['id']),
                   child: Row(
                     children: [
-                      Text("$_likes",
+                      Text("$likes",
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
-                      Icon(_isLiked ? Icons.favorite : Icons.favorite_border,
-                          size: 16, color: _isLiked ? Colors.red : Colors.grey),
+                      Icon(isLiked ? Icons.favorite : Icons.favorite_border,
+                          size: 16, color: isLiked ? Colors.red : Colors.grey),
                     ],
                   ),
                 ),
                 const SizedBox(width: 16),
-                Text("${widget.post['comments']}",
+                Text("${post['comments']}",
                     style: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(width: 4),
@@ -846,66 +628,19 @@ class _PopularCardState extends State<_PopularCard> {
   }
 }
 
-// TARJETA RECIENTES (Diseño Vertical con imagen opcional)
-class _RecentCard extends StatefulWidget {
+class _RecentCard extends ConsumerWidget {
   final Map<String, dynamic> post;
   final VoidCallback onTap;
 
   const _RecentCard({required this.post, required this.onTap});
 
   @override
-  State<_RecentCard> createState() => _RecentCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLiked = post['isLiked'] ?? false;
+    final likes = post['likes'] ?? 0;
 
-class _RecentCardState extends State<_RecentCard> {
-  late int _likes;
-  bool _isLiked = false;
-  late ApiClient _apiClient;
-
-  @override
-  void initState() {
-    super.initState();
-    _likes = widget.post['likes'];
-    _isLiked = widget.post['isLiked'] ?? false;
-    _apiClient = ApiClient(getBaseUrl());
-    if (UserSession.token != null) _apiClient.setToken(UserSession.token!);
-  }
-
-  Future<void> _darLike() async {
-    setState(() {
-      if (_isLiked) {
-        _likes--;
-        _isLiked = false;
-      } else {
-        _likes++;
-        _isLiked = true;
-      }
-    });
-    try {
-      if (_isLiked) {
-        await _apiClient.likePublicacion(widget.post['id']);
-      } else {
-        await _apiClient.unlikePublicacion(widget.post['id']);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          if (_isLiked) {
-            _likes--;
-            _isLiked = false;
-          } else {
-            _likes++;
-            _isLiked = true;
-          }
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         padding: const EdgeInsets.all(16),
@@ -917,16 +652,15 @@ class _RecentCardState extends State<_RecentCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.brown.shade100,
-                  backgroundImage: widget.post['avatar'] != null
-                      ? NetworkImage(widget.post['avatar'])
+                  backgroundImage: post['avatar'] != null
+                      ? NetworkImage(post['avatar'])
                       : null,
-                  child: widget.post['avatar'] == null
+                  child: post['avatar'] == null
                       ? const Icon(Icons.person, color: Colors.brown)
                       : null,
                 ),
@@ -935,74 +669,128 @@ class _RecentCardState extends State<_RecentCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.post['user'],
+                      Text(post['user'],
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text(widget.post['time'],
+                      Text(post['time'],
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade500)),
+                              color: Colors.grey.shade500, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                if (post['isMine'] == true) ...[
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        color: Colors.red, size: 20),
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Eliminar publicación"),
+                        content: const Text(
+                            "¿Estás seguro de que quieres eliminar esta publicación?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("Cancelar"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              ref
+                                  .read(forumProvider.notifier)
+                                  .deletePost(post['id']);
+                              Navigator.pop(ctx);
+                            },
+                            child: const Text("Eliminar",
+                                style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (post['titulo'] != null && post['titulo'] != '') ...[
+              Text(
+                post['titulo'],
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 18, height: 1.2),
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              post['text'],
+              style: TextStyle(
+                  color: Colors.grey.shade800, fontSize: 14, height: 1.5),
+            ),
+            if (post['image'] != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  post['image'],
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      ref.read(forumProvider.notifier).toggleLike(post['id']),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isLiked
+                          ? Colors.red.withOpacity(0.1)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(isLiked ? Icons.favorite : Icons.favorite_border,
+                            size: 18,
+                            color: isLiked ? Colors.red : Colors.grey),
+                        const SizedBox(width: 6),
+                        Text("$likes",
+                            style: TextStyle(
+                              color: isLiked ? Colors.red : Colors.grey.shade700,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.chat_bubble_outline,
+                          size: 18, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Text("${post['comments']}",
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
+                          )),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-
-            if (widget.post['titulo'] != '')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(widget.post['titulo'],
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
-              ),
-
-            Text(widget.post['text'],
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
-            const SizedBox(height: 12),
-
-            // Imagen opcional
-            if (widget.post['image'] != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    widget.post['image'],
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) =>
-                        Container(height: 100, color: Colors.grey.shade100),
-                  ),
-                ),
-              ),
-
-            // Footer
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                GestureDetector(
-                  onTap: _darLike,
-                  child: Row(
-                    children: [
-                      Text("$_likes",
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 4),
-                      Icon(_isLiked ? Icons.favorite : Icons.favorite_border,
-                          size: 20, color: _isLiked ? Colors.red : Colors.grey),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text("${widget.post['comments']}",
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 4),
-                const Icon(Icons.chat_bubble_outline,
-                    size: 20, color: Colors.grey),
-              ],
-            )
           ],
         ),
       ),

@@ -3,25 +3,25 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:vinas_mobile/core/services/user_sesion.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/api_config.dart';
+import '../../core/services/user_sesion.dart';
+import '../../core/providers.dart';
 import '../main_layout/home_page.dart';
 import 'register_page.dart';
 
-class LoginFormPage extends StatefulWidget {
+class LoginFormPage extends ConsumerStatefulWidget {
   const LoginFormPage({super.key});
 
   @override
-  State<LoginFormPage> createState() => _LoginFormPageState();
+  ConsumerState<LoginFormPage> createState() => _LoginFormPageState();
 }
 
-class _LoginFormPageState extends State<LoginFormPage> {
+class _LoginFormPageState extends ConsumerState<LoginFormPage> {
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
 
-  // Color principal (Vino VitIA: #A01B4C)
   final Color _authMainColor = const Color(0xFFA01B4C);
-  // Blanco cálido VitIA: #FFFFEFB
   final Color _authFieldColor = const Color(0xFFFFFFEB);
 
   Future<void> login() async {
@@ -44,13 +44,16 @@ class _LoginFormPageState extends State<LoginFormPage> {
         final data = jsonDecode(response.body);
         final token = data["access_token"];
 
+        // 1. Persistencia tradicional (disco)
         await UserSession.setToken(token);
+        
+        // 2. Notificación reactiva (Riverpod)
+        ref.read(sessionTokenProvider.notifier).state = token;
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Inicio de sesión exitoso")),
         );
 
-        // Vuelve a HomePage y limpia el stack
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
@@ -80,7 +83,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _authMainColor, // Fondo color Vino VitIA
+      backgroundColor: _authMainColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -96,7 +99,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Título "Iniciar sesión"
                 const Text(
                   "Iniciar sesión",
                   style: TextStyle(
@@ -106,8 +108,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                       fontFamily: 'Lora'),
                 ),
                 const SizedBox(height: 50),
-
-                // --- Campo de Correo electrónico ---
                 TextField(
                   controller: emailCtrl,
                   style: TextStyle(color: _authMainColor, fontSize: 16),
@@ -117,7 +117,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                         Icon(Icons.email_outlined, color: _authMainColor),
                     filled: true,
                     fillColor: _authFieldColor,
-                    // Bordes estilizados
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide:
@@ -134,8 +133,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                   ),
                 ),
                 const SizedBox(height: 15),
-
-                // --- Campo de Contraseña ---
                 TextField(
                   controller: passwordCtrl,
                   obscureText: true,
@@ -161,8 +158,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
-                // --- Botón Continuar (Relleno Blanco) ---
                 Container(
                   width: double.infinity,
                   height: 50,
@@ -179,13 +174,9 @@ class _LoginFormPageState extends State<LoginFormPage> {
                             fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
-                // --- Botón de Registro (Texto simple) ---
                 TextButton(
                   onPressed: () {
-                    // Navega a RegisterPage
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const RegisterPage()),
@@ -203,7 +194,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
           ),
         ),
       ),
-      // <<< BARRA DE NAVEGACIÓN SIMULADA ELIMINADA >>>
     );
   }
 }

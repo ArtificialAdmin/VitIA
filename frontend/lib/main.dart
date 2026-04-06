@@ -4,13 +4,19 @@ import 'pages/main_layout/home_page.dart';
 import 'core/services/user_sesion.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Cargamos la sesión antes de iniciar la UI
   final bool hasSession = await UserSession.loadSession();
 
-  runApp(MyApp(isLoggedIn: hasSession));
+  runApp(
+    ProviderScope(
+      child: MyApp(isLoggedIn: hasSession),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
