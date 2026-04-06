@@ -42,12 +42,28 @@ def read_comentarios_publicacion(
     id_publicacion: int,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user) # Opcional si permites ver sin login, pero aquí parece requerido para consistencia
 ):
     """
     Devuelve los comentarios en estructura de árbol (anidados).
     """
-    return crud.get_comentarios_publicacion(db=db, id_publicacion=id_publicacion, skip=skip, limit=limit)
+    comentarios = crud.get_comentarios_publicacion(db=db, id_publicacion=id_publicacion, skip=skip, limit=limit)
+    
+    # Enriquecer con is_liked recursivamente
+    def enriquecer_recursivo(lista):
+        for c in lista:
+            voto = db.query(models.VotoComentario).filter(
+                models.VotoComentario.id_comentario == c.id_comentario,
+                models.VotoComentario.id_usuario == current_user.id_usuario,
+                models.VotoComentario.es_like == True
+            ).first()
+            c.is_liked = (voto is not None)
+            if c.hijos:
+                enriquecer_recursivo(c.hijos)
+
+    enriquecer_recursivo(comentarios)
+    return comentarios
 
 @router.delete("/{id_comentario}",
     summary="Eliminar un comentario"
@@ -62,7 +78,7 @@ def delete_comentario_endpoint(
         raise HTTPException(status_code=404, detail="Comentario no encontrado o no autorizado")
     return {"msg": "Comentario eliminado"}
 
-@router.post("/comentarios/{id_comentario}/voto", summary="Votar Comentario")
+@router.post("/{id_comentario}/voto", summary="Votar Comentario")
 def votar_comentario_endpoint(
     id_comentario: int,
     voto: schemas.VotoCreate,

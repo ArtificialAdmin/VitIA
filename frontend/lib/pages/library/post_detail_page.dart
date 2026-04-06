@@ -4,6 +4,7 @@ import '../../core/api_client.dart';
 import '../../core/services/api_config.dart';
 import '../../core/services/user_sesion.dart';
 import '../../core/forum_provider.dart';
+import '../../core/providers.dart';
 
 class PostDetailPage extends ConsumerStatefulWidget {
   final Map<String, dynamic> post;
@@ -21,6 +22,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
   final TextEditingController _commentCtrl = TextEditingController();
   bool _isPostingComment = false;
+  int? _replyToId;
+  String? _replyToName;
 
   @override
   void initState() {
@@ -59,8 +62,13 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
     try {
       await _apiClient.createComentario(
-          widget.post['id'], _commentCtrl.text.trim());
+          widget.post['id'], _commentCtrl.text.trim(),
+          idPadre: _replyToId);
       _commentCtrl.clear();
+      setState(() {
+        _replyToId = null;
+        _replyToName = null;
+      });
       await _cargarComentarios(); // Recargar lista
     } catch (e) {
       if (mounted)
@@ -101,6 +109,88 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("Error al eliminar: $e")));
       }
+    }
+  }
+
+  Future<void> _toggleLikeComentario(int commentId) async {
+    if (UserSession.token == null) return;
+
+    // Actualización optimista recursiva
+    bool updateRecursive(List<dynamic> list) {
+      for (int i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c['id_comentario'] == commentId) {
+          final bool currentlyLiked = c['is_liked'] ?? false;
+          final int currentLikes = c['likes'] ?? 0;
+          
+          list[i] = {
+            ...c,
+            'is_liked': !currentlyLiked,
+            'likes': currentlyLiked ? currentLikes - 1 : currentLikes + 1,
+          };
+          return true;
+        }
+        if (c['hijos'] != null && updateRecursive(c['hijos'])) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    final originalComentarios = List<dynamic>.from(_comentarios);
+    setState(() {
+      updateRecursive(_comentarios);
+    });
+
+    try {
+      final c = _findCommentById(_comentarios, commentId);
+      if (c == null) return;
+      
+      if (c['is_liked'] == true) {
+        await _apiClient.likeComentario(commentId);
+      } else {
+        await _apiClient.unlikeComentario(commentId);
+      }
+    } catch (e) {
+      // Revertir en caso de error
+      setState(() {
+        _comentarios = originalComentarios;
+      });
+    }
+  }
+
+  dynamic _findCommentById(List<dynamic> list, int id) {
+    for (var c in list) {
+      if (c['id_comentario'] == id) return c;
+      if (c['hijos'] != null) {
+        final nested = _findCommentById(c['hijos'], id);
+        if (nested != null) return nested;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _borrarComentario(int commentId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Eliminar comentario"),
+        content: const Text("¿Estás seguro de que quieres eliminar este comentario?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Eliminar", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _apiClient.deleteComentario(commentId);
+      _cargarComentarios(); // Recargamos para ver los cambios
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Comentario eliminado")));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error al eliminar comentario")));
     }
   }
 
@@ -245,57 +335,38 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                               style: TextStyle(color: Colors.grey))),
                     )
                   else
-                    ListView.separated(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                      itemCount: _comentarios.length,
-                      separatorBuilder: (c, i) => const Divider(),
-                      itemBuilder: (ctx, index) {
-                        final c = _comentarios[index];
-                        final String texto = c['texto'] ?? "";
-                        final autor = c['usuario'] != null
-                            ? (c['usuario']['nombre'] ?? "Usuario")
-                            : c['autor']?['nombre'] ?? "Anónimo";
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.grey.shade100,
-                                child: Text(
-                                    autor.isNotEmpty ? autor[0].toUpperCase() : "?",
-                                    style: const TextStyle(fontSize: 12)),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(autor,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14)),
-                                    const SizedBox(height: 4),
-                                    Text(texto,
-                                        style: const TextStyle(fontSize: 14)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                    Column(
+                      children: _comentarios
+                          .map((c) => _buildComentario(c))
+                          .toList(),
                     ),
                   const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
+          if (_replyToId != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey.shade100,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Respondiendo a $_replyToName",
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () => setState(() {
+                      _replyToId = null;
+                      _replyToName = null;
+                    }),
+                  )
+                ],
+              ),
+            ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             decoration: BoxDecoration(
@@ -334,5 +405,142 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildComentario(dynamic c, {int level = 0, String? parentName}) {
+    final String texto = c['texto'] ?? "";
+    final autorObj = c['autor'] ?? c['usuario'];
+    final String autor = autorObj != null
+        ? "${autorObj['nombre'] ?? 'Usuario'} ${autorObj['apellidos'] ?? ''}"
+            .trim()
+        : "Anónimo";
+    final int? authorId = autorObj?['id_usuario'];
+    final currentUserId = ref.read(userIdProvider);
+    final String? fechaIso = c['fecha_comentario'];
+    final String fecha = _formatearFechaRelativa(fechaIso);
+
+    final List<dynamic> hijos = c['hijos'] ?? [];
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(20.0 + (level * 20.0), 8, 20, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: Colors.grey.shade100,
+                backgroundImage: autorObj != null && autorObj['path_foto_perfil'] != null
+                    ? NetworkImage(autorObj['path_foto_perfil'])
+                    : null,
+                child: autorObj == null || autorObj['path_foto_perfil'] == null
+                    ? Text(autor.isNotEmpty ? autor[0].toUpperCase() : "?",
+                        style: const TextStyle(fontSize: 10))
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (parentName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2.0),
+                        child: Text(
+                          "respondiendo a @${parentName.replaceAll(" ", "").toLowerCase()}",
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.blue.shade300,
+                              fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    Row(
+                      children: [
+                        Text(autor,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(width: 8),
+                        Text(fecha,
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 11)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(texto, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _replyToId = c['id_comentario'];
+                              _replyToName = autor;
+                            });
+                          },
+                          child: Text("Responder",
+                              style: TextStyle(
+                                  color: Colors.blue.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                        if (authorId != null && authorId == currentUserId) ...[
+                          const SizedBox(width: 16),
+                          GestureDetector(
+                            onTap: () => _borrarComentario(c['id_comentario']),
+                            child: Text("Eliminar",
+                                style: TextStyle(
+                                    color: Colors.red.shade400,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ]
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => _toggleLikeComentario(c['id_comentario']),
+                    child: Icon(
+                      (c['is_liked'] ?? false) ? Icons.favorite : Icons.favorite_border,
+                      size: 16,
+                      color: (c['is_liked'] ?? false) ? Colors.red : Colors.grey,
+                    ),
+                  ),
+                  Text("${c['likes'] ?? 0}",
+                      style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (hijos.isNotEmpty)
+          ...hijos
+              .map((hijo) => _buildComentario(hijo, level: level + 1, parentName: autor))
+              .toList(),
+      ],
+    );
+  }
+
+  String _formatearFechaRelativa(String? fechaIso) {
+    if (fechaIso == null) return "ahora";
+    try {
+      final fecha = DateTime.parse(fechaIso);
+      final ahora = DateTime.now();
+      final diferencia = ahora.difference(fecha);
+
+      if (diferencia.inSeconds < 60) return "ahora";
+      if (diferencia.inMinutes < 60) return "hace ${diferencia.inMinutes}m";
+      if (diferencia.inHours < 24) return "hace ${diferencia.inHours}h";
+      if (diferencia.inDays < 7) return "hace ${diferencia.inDays}d";
+      if (diferencia.inDays < 30)
+        return "hace ${(diferencia.inDays / 7).floor()} sem";
+      return "${fecha.day}/${fecha.month}/${fecha.year}";
+    } catch (e) {
+      return "";
+    }
   }
 }

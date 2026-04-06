@@ -247,14 +247,40 @@ class ApiClient {
   }
 
   // 7. Crear comentario
-  Future<void> createComentario(int idPublicacion, String texto) async {
+  Future<void> createComentario(int idPublicacion, String texto, {int? idPadre}) async {
     try {
       await _dio.post('/comentarios/', data: {
         "texto": texto,
         "id_publicacion": idPublicacion,
+        if (idPadre != null) "id_padre": idPadre,
       });
     } catch (e) {
       print("Error al crear comentario: $e");
+      rethrow;
+    }
+  }
+
+  // 8. Votar Comentario
+  Future<void> votarComentario(int idComentario, bool? esLike) async {
+    try {
+      await _dio.post('/comentarios/$idComentario/voto', data: {
+        "es_like": esLike,
+      });
+    } catch (e) {
+      print("Error al votar comentario: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> likeComentario(int idComentario) => votarComentario(idComentario, true);
+  Future<void> unlikeComentario(int idComentario) => votarComentario(idComentario, null);
+
+  // 9. Eliminar Comentario
+  Future<void> deleteComentario(int idComentario) async {
+    try {
+      await _dio.delete('/comentarios/$idComentario');
+    } catch (e) {
+      print("Error al eliminar comentario: $e");
       rethrow;
     }
   }

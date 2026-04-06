@@ -245,6 +245,7 @@ class Comentario(ComentarioBase, BaseConfig):
     id_usuario: int
     id_publicacion: int
     id_padre: Optional[int] = None
+    is_liked: Optional[bool] = None
     
     autor: AutorComentario
     
