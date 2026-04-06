@@ -54,7 +54,7 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
             'fullDate': _formatearFechaDetallada(rawDate),
             'image': imagenUrl,
             'likes': item['likes'] ?? 0,
-            'comments': (item['comentarios'] as List?)?.length ?? 0,
+            'comments': item['num_comentarios'] ?? 0,
             'isMine': authorId != null && authorId == currentUserId,
             'isLiked': item['is_liked'] ?? false,
             'avatar': item['autor'] != null ? (item['autor']['path_foto_perfil'] ?? item['autor']['foto_perfil'] ?? item['autor']['link_foto']) : null,

@@ -69,7 +69,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         _replyToId = null;
         _replyToName = null;
       });
-      await _cargarComentarios(); // Recargar lista
+      await _cargarComentarios(); // Recargar lista local
+      ref.invalidate(forumProvider); // Forzar actualización del Feed global
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,6 +171,21 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     return null;
   }
 
+  int _getTotalCommentsCount() {
+    int count = 0;
+    void countRecursive(List<dynamic> list) {
+      count += list.length;
+      for (var c in list) {
+        final hijos = c['hijos'] as List?;
+        if (hijos != null && hijos.isNotEmpty) {
+          countRecursive(hijos);
+        }
+      }
+    }
+    countRecursive(_comentarios);
+    return count;
+  }
+
   Future<void> _borrarComentario(int commentId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -187,7 +203,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
     try {
       await _apiClient.deleteComentario(commentId);
-      _cargarComentarios(); // Recargamos para ver los cambios
+      await _cargarComentarios(); // Recargamos localmente
+      ref.invalidate(forumProvider); // Forzar actualización del Feed
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Comentario eliminado")));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error al eliminar comentario")));
@@ -313,7 +330,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                         const SizedBox(width: 20),
                         const Icon(Icons.chat_bubble_outline, color: Colors.grey),
                         const SizedBox(width: 4),
-                        Text("${_comentarios.length}",
+                        Text("${_getTotalCommentsCount()}",
                             style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
@@ -321,8 +338,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.all(20),
-                    child: const Text("Comentarios",
-                        style: TextStyle(
+                    child: Text("Comentarios (${_getTotalCommentsCount()})",
+                        style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 18)),
                   ),
                   if (_isLoadingComments)

@@ -160,6 +160,7 @@ class Publicacion(PublicacionBase, BaseConfig):
     autor: AutorPublicacion
     likes: int
     is_liked: Optional[bool] = None # <-- Indicar si el usuario actual le dio like
+    num_comentarios: int = 0
     variedades: List[Variedad] = []
     comentarios: List['Comentario'] = []
 # -----------------------------------------------------

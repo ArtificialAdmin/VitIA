@@ -105,6 +105,11 @@ def read_publicaciones_endpoint(
         # Asignamos el atributo dinámicamente. 
         # Pydantic (from_attributes=True) lo leerá.
         pub.is_liked = (voto is not None)
+        
+        # Calcular total de comentarios (incluyendo respuestas)
+        pub.num_comentarios = db.query(models.Comentario).filter(
+            models.Comentario.id_publicacion == pub.id_publicacion
+        ).count()
 
     return publicaciones
 
@@ -137,6 +142,11 @@ def read_user_publicaciones_endpoint(
             models.VotoPublicacion.es_like == True
         ).first()
         pub.is_liked = (voto is not None)
+        
+        # Calcular total de comentarios
+        pub.num_comentarios = db.query(models.Comentario).filter(
+            models.Comentario.id_publicacion == pub.id_publicacion
+        ).count()
 
     return publicaciones
 
