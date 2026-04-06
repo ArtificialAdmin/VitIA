@@ -47,8 +47,20 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
         // 1. Persistencia tradicional (disco)
         await UserSession.setToken(token);
         
-        // 2. Notificación reactiva (Riverpod)
+        // 2. Notificación reactiva (Riverpod) - Token
         ref.read(sessionTokenProvider.notifier).state = token;
+
+        // 3. Obtener el perfil completo (incluyendo id_usuario) para reactividad
+        try {
+          final userInfo = await ref.read(apiProvider).getMe();
+          final userId = userInfo['id_usuario'];
+          if (userId != null) {
+            await UserSession.setUserId(userId);
+            ref.read(userIdProvider.notifier).state = userId;
+          }
+        } catch (e) {
+          print("Error al recuperar perfil tras login: $e");
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Inicio de sesión exitoso")),

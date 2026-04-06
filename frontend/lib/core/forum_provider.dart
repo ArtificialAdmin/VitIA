@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/services/user_sesion.dart';
 import '../core/providers.dart';
 
 class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
@@ -8,6 +7,8 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
     // Al observar apiProvider, este notifier se reconstruirá automáticamente
     // cuando el token cambie (ej: Login/Logout)
     ref.watch(apiProvider);
+    // Observamos el ID del usuario para re-mapear isMine si el ID cambia (Login asíncrono)
+    ref.watch(userIdProvider);
     return _fetchPosts();
   }
 
@@ -42,6 +43,8 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
 
           final rawDate = item['fecha_publicacion'] ?? item['fecha_creacion'];
 
+          final currentUserId = ref.read(userIdProvider);
+
           return {
             'id': item['id_publicacion'],
             'titulo': item['titulo'] ?? '',
@@ -52,7 +55,7 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
             'image': imagenUrl,
             'likes': item['likes'] ?? 0,
             'comments': (item['comentarios'] as List?)?.length ?? 0,
-            'isMine': authorId != null && authorId == UserSession.userId,
+            'isMine': authorId != null && authorId == currentUserId,
             'isLiked': item['is_liked'] ?? false,
             'avatar': item['autor'] != null ? (item['autor']['path_foto_perfil'] ?? item['autor']['foto_perfil'] ?? item['autor']['link_foto']) : null,
           };

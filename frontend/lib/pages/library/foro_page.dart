@@ -678,36 +678,6 @@ class _RecentCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (post['isMine'] == true) ...[
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline,
-                        color: Colors.red, size: 20),
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("Eliminar publicación"),
-                        content: const Text(
-                            "¿Estás seguro de que quieres eliminar esta publicación?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text("Cancelar"),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              ref
-                                  .read(forumProvider.notifier)
-                                  .deletePost(post['id']);
-                              Navigator.pop(ctx);
-                            },
-                            child: const Text("Eliminar",
-                                style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 12),

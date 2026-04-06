@@ -12,6 +12,9 @@ final apiBaseUrlProvider = Provider<String>((ref) {
 // Provider para el token de sesión, inicializado con el valor actual de UserSession
 final sessionTokenProvider = StateProvider<String?>((ref) => UserSession.token);
 
+// Provider para el ID del usuario actual, inicializado con el valor actual de UserSession
+final userIdProvider = StateProvider<int?>((ref) => UserSession.userId);
+
 final apiProvider = Provider<ApiClient>((ref) {
   final baseUrl = ref.watch(apiBaseUrlProvider);
   final token = ref.watch(sessionTokenProvider);
