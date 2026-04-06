@@ -40,13 +40,15 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
             authorId = item['id_usuario'];
           }
 
+          final rawDate = item['fecha_publicacion'] ?? item['fecha_creacion'];
+
           return {
             'id': item['id_publicacion'],
             'titulo': item['titulo'] ?? '',
             'text': item['texto'] ?? '',
             'user': nombreUsuario,
-            'time': _formatearFecha(
-                item['fecha_publicacion'] ?? item['fecha_creacion']),
+            'time': _formatearFechaRelativa(rawDate),
+            'fullDate': _formatearFechaDetallada(rawDate),
             'image': imagenUrl,
             'likes': item['likes'] ?? 0,
             'comments': (item['comentarios'] as List?)?.length ?? 0,
@@ -58,18 +60,34 @@ class ForumNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
         .toList();
   }
 
-  String _formatearFecha(String? fechaIso) {
+  String _formatearFechaRelativa(String? fechaIso) {
     if (fechaIso == null) return "Reciente";
     try {
       final fecha = DateTime.parse(fechaIso);
       final ahora = DateTime.now();
+      final diferencia = ahora.difference(fecha);
+
+      if (diferencia.inSeconds < 60) return "ahora";
+      if (diferencia.inMinutes < 60) return "hace ${diferencia.inMinutes}m";
+      if (diferencia.inHours < 24) return "hace ${diferencia.inHours}h";
+      if (diferencia.inDays < 7) return "hace ${diferencia.inDays}d";
+      if (diferencia.inDays < 30) return "hace ${(diferencia.inDays / 7).floor()} sem";
+      if (diferencia.inDays < 365) return "hace ${(diferencia.inDays / 30).floor()} mes(es)";
+      return "hace ${(diferencia.inDays / 365).floor()} año(s)";
+    } catch (e) {
+      return "Reciente";
+    }
+  }
+
+  String _formatearFechaDetallada(String? fechaIso) {
+    if (fechaIso == null) return "Reciente";
+    try {
+      final fecha = DateTime.parse(fechaIso);
       final dia = fecha.day.toString().padLeft(2, '0');
       final mes = fecha.month.toString().padLeft(2, '0');
-      if (fecha.year == ahora.year) {
-        return "$dia/$mes";
-      } else {
-        return "$dia/$mes/${fecha.year}";
-      }
+      final hora = fecha.hour.toString().padLeft(2, '0');
+      final min = fecha.minute.toString().padLeft(2, '0');
+      return "$dia/$mes/${fecha.year} - $hora:$min";
     } catch (e) {
       return "Reciente";
     }

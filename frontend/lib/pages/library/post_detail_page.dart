@@ -168,7 +168,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                             Text(currentPost['user'] ?? "Usuario",
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text(currentPost['time'] ?? "",
+                            Text(currentPost['fullDate'] ?? currentPost['time'] ?? "",
                                 style: TextStyle(
                                     color: Colors.grey.shade500, fontSize: 13)),
                           ],
