@@ -61,8 +61,16 @@ class _ForoPageState extends ConsumerState<ForoPage>
             (a, b) => (b['comments'] as int).compareTo(a['comments'] as int));
         break;
       case 'author':
-        temp.sort(
-            (a, b) => a['user'].toString().compareTo(b['user'].toString()));
+        temp.sort((a, b) => a['user']
+            .toString()
+            .toLowerCase()
+            .compareTo(b['user'].toString().toLowerCase()));
+        break;
+      case 'author_za':
+        temp.sort((a, b) => b['user']
+            .toString()
+            .toLowerCase()
+            .compareTo(a['user'].toString().toLowerCase()));
         break;
       default:
         break;
@@ -114,7 +122,7 @@ class _ForoPageState extends ConsumerState<ForoPage>
                                 fontSize: 20, fontWeight: FontWeight.bold)),
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text("Listo",
+                          child: const Text("Aplicar",
                               style: TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold)),
@@ -158,6 +166,8 @@ class _ForoPageState extends ConsumerState<ForoPage>
                       children: [
                         _buildFilterChip(
                             "Autor (A-Z)", 'author', setModalState),
+                        _buildFilterChip(
+                            "Autor (Z-A)", 'author_za', setModalState),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -327,6 +337,12 @@ class _ForoPageState extends ConsumerState<ForoPage>
                         final popularPosts = ref.watch(popularPostsProvider);
                         final myPosts = ref.watch(myPostsProvider);
 
+                        // --- OPTIMIZACIÓN: Calculamos las listas filtradas UNA SOLA VEZ ---
+                        final List<Map<String, dynamic>> filteredAll =
+                            _getFilteredList(allPosts);
+                        final List<Map<String, dynamic>> filteredMine =
+                            _getFilteredList(myPosts);
+
                         return TabBarView(
                           controller: _tabController,
                           children: [
@@ -390,8 +406,6 @@ class _ForoPageState extends ConsumerState<ForoPage>
                                   SliverList(
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final filteredAll =
-                                            _getFilteredList(allPosts);
                                         return _RecentCard(
                                           post: filteredAll[index],
                                           onTap: () {
@@ -406,8 +420,7 @@ class _ForoPageState extends ConsumerState<ForoPage>
                                           },
                                         );
                                       },
-                                      childCount:
-                                          _getFilteredList(allPosts).length,
+                                      childCount: filteredAll.length,
                                     ),
                                   ),
                                   const SliverToBoxAdapter(
@@ -434,8 +447,6 @@ class _ForoPageState extends ConsumerState<ForoPage>
                                   SliverList(
                                     delegate: SliverChildBuilderDelegate(
                                       (context, index) {
-                                        final filteredMine =
-                                            _getFilteredList(myPosts);
                                         return _RecentCard(
                                           post: filteredMine[index],
                                           onTap: () {
@@ -450,8 +461,7 @@ class _ForoPageState extends ConsumerState<ForoPage>
                                           },
                                         );
                                       },
-                                      childCount:
-                                          _getFilteredList(myPosts).length,
+                                      childCount: filteredMine.length,
                                     ),
                                   ),
                                   const SliverToBoxAdapter(
@@ -467,7 +477,7 @@ class _ForoPageState extends ConsumerState<ForoPage>
                 ],
               ),
             ),
-            if (!_isCreatingPost)
+            if (!_isCreatingPost && !_isSearching)
               Positioned(
                 bottom: 110,
                 left: 20,
@@ -731,7 +741,8 @@ class _RecentCard extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Text("$likes",
                             style: TextStyle(
-                              color: isLiked ? Colors.red : Colors.grey.shade700,
+                              color:
+                                  isLiked ? Colors.red : Colors.grey.shade700,
                               fontWeight: FontWeight.bold,
                             )),
                       ],

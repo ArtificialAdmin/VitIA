@@ -878,6 +878,7 @@ class _CatalogoPageState extends State<CatalogoPage>
             child: TextField(
               controller: _searchController,
               onChanged: _filtrar,
+              autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Buscar...',
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
