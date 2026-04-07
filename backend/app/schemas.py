@@ -91,7 +91,7 @@ class ColeccionBase(BaseModel):
     notas: Optional[str] = None
     latitud: Optional[float] = None
     longitud: Optional[float] = None
-    es_publica: Optional[bool] = True
+    es_publica: bool = True
 
 class ColeccionCreate(ColeccionBase):
     """Esquema para crear un item en la colección.

@@ -41,9 +41,13 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
         (_itemActual['longitud'] as num).toDouble(),
       );
     }
-    // Robust boolean interpretation for private/public
+    // Robust boolean interpretation for private/public (Defaulting to TRUE if null)
     final val = _itemActual['es_publica'];
-    _esPublica = (val == true || val == 1 || val == "true");
+    if (val == null) {
+      _esPublica = true;
+    } else {
+      _esPublica = (val == true || val == 1 || val == "true");
+    }
 
     _notasController.addListener(_onNotasChanged);
 
@@ -73,7 +77,7 @@ class _DetalleColeccionPageState extends State<DetalleColeccionPage> {
 
     // 2. Privacidad
     final val = _itemActual['es_publica'];
-    final bool originalPublica = (val == true || val == 1 || val == "true");
+    final bool originalPublica = (val == null) ? true : (val == true || val == 1 || val == "true");
     bool publicaChanged = _esPublica != originalPublica;
 
     // 3. Ubicación
