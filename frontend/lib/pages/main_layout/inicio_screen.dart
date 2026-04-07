@@ -5,6 +5,7 @@ import '../../widgets/weather_section.dart';
 import '../../widgets/vitia_header.dart';
 import '../tutorial/tutorial_page.dart';
 import '../../core/api_client.dart';
+import '../../widgets/home_map_preview.dart';
 
 class InicioScreen extends StatefulWidget {
   // Convert to Stateful
@@ -75,7 +76,7 @@ class _InicioScreenState extends State<InicioScreen> {
         setState(() {
           _weatherData = data;
           _isLoadingWeather = false;
-          
+
           // Actualizar la ubicación mostrada con el nombre de la ciudad de la API
           if (data != null && data['location'] != null) {
             final name = data['location']['name'];
@@ -160,7 +161,7 @@ class _InicioScreenState extends State<InicioScreen> {
 
                     const SizedBox(height: 10),
 
-                    // 4. UBICACIÓN
+                    // 4. UBICACIÓN (Movido aquí, debajo de la ilustración)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
@@ -173,7 +174,11 @@ class _InicioScreenState extends State<InicioScreen> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              (_displayLocation ?? (widget.location.isNotEmpty ? widget.location : "Sin ubicación definida")) + ".",
+                              (_displayLocation ??
+                                      (widget.location.isNotEmpty
+                                          ? widget.location
+                                          : "Sin ubicación definida")) +
+                                  ".",
                               style: const TextStyle(
                                   fontSize: 16, color: Colors.black87),
                               overflow: TextOverflow.ellipsis,
@@ -183,6 +188,28 @@ class _InicioScreenState extends State<InicioScreen> {
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 25),
+
+                    // TÍTULO MAPA (Estilo similar al tiempo)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        "Mapa",
+                        style: GoogleFonts.lora(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF142018),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 3b. VISTA PREVIA DEL MAPA (Prueba Visual)
+                    HomeMapPreview(apiClient: widget.apiClient),
+
+                    const SizedBox(height: 10),
 
                     // 5. SECCIÓN TIEMPO
                     if (_weatherData != null)

@@ -5,11 +5,11 @@ import '../../core/api_client.dart';
 import '../../core/services/api_config.dart';
 import '../../core/services/user_sesion.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../widgets/vitia_header.dart';
 import 'package:dio/dio.dart';
 
 class MapaColeccionesPage extends StatefulWidget {
-  const MapaColeccionesPage({super.key});
+  final String? initialModo;
+  const MapaColeccionesPage({super.key, this.initialModo});
 
   @override
   State<MapaColeccionesPage> createState() => _MapaColeccionesPageState();
@@ -28,6 +28,7 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
   @override
   void initState() {
     super.initState();
+    _modo = widget.initialModo ?? 'publico';
     _apiClient = ApiClient(getBaseUrl());
     if (UserSession.token != null) {
       _apiClient.setToken(UserSession.token!);
@@ -282,189 +283,152 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            VitiaHeader(
-              title: "Mapa",
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F2),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              padding: const EdgeInsets.all(5),
+      backgroundColor: Colors.black, // Fondo oscuro para carga
+      body: Stack(
+        children: [
+          // 1. MAPA (FONDO COMPLETO)
+          _isLoading && _colecciones.isEmpty
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _mapCenter,
+                    initialZoom: 7.0,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.vinas.app',
+                    ),
+                    MarkerLayer(
+                      markers: _colecciones.map((col) {
+                        final lat = (col['latitud'] as num?)?.toDouble();
+                        final lon = (col['longitud'] as num?)?.toDouble();
+                        if (lat == null || lon == null) return null;
+
+                        return Marker(
+                          point: LatLng(lat, lon),
+                          width: 55,
+                          height: 55,
+                          child: GestureDetector(
+                            onTap: () => _showPostPreview(col),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: const [
+                                  BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2))
+                                ],
+                                color: const Color(0xFF142018),
+                              ),
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: col['path_foto_usuario'] ?? '',
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.image, color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).whereType<Marker>().toList(),
+                    ),
+                  ],
+                ),
+
+          // 2. CARGANDO (OVERLAY)
+          if (_isLoading && _colecciones.isNotEmpty)
+             const Positioned(
+               top: 100,
+               left: 0,
+               right: 0,
+               child: Center(child: CircularProgressIndicator(color: Color(0xFF142018))),
+             ),
+
+          // 3. CONTROLES FLOTANTES
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        if (_modo != 'publico') {
-                          setState(() => _modo = 'publico');
-                          _fetchMapData();
-                        }
-                      },
-                      child: Container(
-                        decoration: _modo == 'publico'
-                            ? BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2))
-                                ],
-                              )
-                            : const BoxDecoration(),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Global",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: _modo == 'publico'
-                                ? Colors.black87
-                                : Colors.grey.shade500,
-                          ),
-                        ),
+                   // Botón Atrás
+                   GestureDetector(
+                     onTap: () => Navigator.pop(context),
+                     child: Container(
+                       padding: const EdgeInsets.all(12),
+                       decoration: BoxDecoration(
+                         color: Colors.white,
+                         shape: BoxShape.circle,
+                         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                       ),
+                       child: const Icon(Icons.arrow_back, color: Color(0xFF142018), size: 24),
+                     ),
+                   ),
+                   const SizedBox(width: 15),
+                   // Selector de modo
+                   Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        if (_modo != 'privado') {
-                          setState(() => _modo = 'privado');
-                          _fetchMapData();
-                        }
-                      },
-                      child: Container(
-                        decoration: _modo == 'privado'
-                            ? BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2))
-                                ],
-                              )
-                            : const BoxDecoration(),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Mis fotos",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: _modo == 'privado'
-                                ? Colors.black87
-                                : Colors.grey.shade500,
-                          ),
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildFullTab("Global", 'publico'),
+                          _buildFullTab("Mis fotos", 'privado'),
+                        ],
                       ),
-                    ),
-                  ),
+                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Stack(
-                      children: [
-                        FlutterMap(
-                          mapController: _mapController,
-                          options: MapOptions(
-                            initialCenter: _mapCenter,
-                            initialZoom: 5.0,
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.example.vitia',
-                            ),
-                            MarkerLayer(
-                              markers: _colecciones
-                                  .map((col) {
-                                    final lat = col['latitud'] as num?;
-                                    final lon = col['longitud'] as num?;
-                                    if (lat == null || lon == null) return null;
+          ),
 
-                                    return Marker(
-                                        point: LatLng(
-                                            lat.toDouble(), lon.toDouble()),
-                                        width: 55,
-                                        height: 55,
-                                        child: GestureDetector(
-                                          onTap: () => _showPostPreview(col),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 3),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Colors.black26,
-                                                    blurRadius: 4,
-                                                    offset: Offset(0, 2))
-                                              ],
-                                              color: const Color(0xFF142018),
-                                            ),
-                                            child: ClipOval(
-                                              child: CachedNetworkImage(
-                                                imageUrl:
-                                                    col['path_foto_usuario'] ??
-                                                        '',
-                                                fit: BoxFit.cover,
-                                                placeholder: (context, url) =>
-                                                    const Center(
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                                color: Colors
-                                                                    .white)),
-                                                errorWidget:
-                                                    (context, url, error) =>
-                                                        const Icon(Icons.image,
-                                                            color: Colors.white,
-                                                            size: 20),
-                                              ),
-                                            ),
-                                          ),
-                                        ));
-                                  })
-                                  .whereType<Marker>()
-                                  .toList(),
-                            )
-                          ],
-                        ),
-                        if (_colecciones.isEmpty)
-                          Center(
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              margin: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                "No hay elementos con ubicación para mostrar",
-                                style: TextStyle(fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+          // 4. AVISO VACÍO
+          if (!_isLoading && _colecciones.isEmpty)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Text("Sin capturas con ubicación", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
             ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullTab(String label, String mode) {
+    bool isSelected = _modo == mode;
+    return GestureDetector(
+      onTap: () {
+        if (_modo != mode) {
+          setState(() => _modo = mode);
+          _fetchMapData();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF142018) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
         ),
       ),
     );

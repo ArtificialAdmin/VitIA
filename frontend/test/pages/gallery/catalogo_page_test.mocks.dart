@@ -191,14 +191,6 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
             _i3.Future<List<_i6.ColeccionModel>>.value(<_i6.ColeccionModel>[]),
       ) as _i3.Future<List<_i6.ColeccionModel>>);
 
-  @override
-  _i3.Future<bool> getTutorialStatus() => (super.noSuchMethod(
-        Invocation.method(
-          #getTutorialStatus,
-          [],
-        ),
-        returnValue: _i3.Future<bool>.value(false),
-      ) as _i3.Future<bool>);
 
   @override
   _i3.Future<void> markTutorialAsComplete() => (super.noSuchMethod(

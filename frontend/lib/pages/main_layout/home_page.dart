@@ -11,7 +11,6 @@ import 'package:geocoding/geocoding.dart';
 import '../gallery/catalogo_page.dart';
 import '../capture/foto_page.dart';
 import '../library/foro_page.dart';
-import '../map/mapa_colecciones_page.dart';
 import 'inicio_screen.dart';
 import 'perfil_page.dart';
 import '../../core/api_client.dart';
@@ -62,7 +61,6 @@ class _HomepageState extends State<HomePage> {
           },
         ),
         const FotoPage(),
-        const MapaColeccionesPage(),
         // CAMBIO: Ahora pasamos el callback al catálogo
         CatalogoPage(
           initialTab: 0,
@@ -110,43 +108,42 @@ class _HomepageState extends State<HomePage> {
     setState(() => _isLoadingStatus = true);
 
     try {
-      // 1. Obtener estado del tutorial
-      final bool tutorialStatus = await _apiClient.getTutorialStatus();
+      // Optimizamos: Una sola llamada para Tutorial y Perfil
+      final userData = await _apiClient.getMe();
+      final bool tutorialSuperado = userData['tutorial_superado'] as bool? ?? false;
 
-      // 2. Obtener datos del perfil (Nombre, Ubicación)
-      try {
-        final userData = await _apiClient.getMe();
-        if (mounted) {
-          setState(() {
-            _userName = userData['nombre'] ?? "Usuario";
-            _lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
-            _lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
-            _userPhotoUrl = userData['path_foto_perfil'];
-          });
-          
-          if (_lat != null && _lon != null) {
-            _updateAddressDisplay(_lat!, _lon!);
-          } else {
-            setState(() => _userLocation = "");
-          }
+      if (mounted) {
+        setState(() {
+          _userName = userData['nombre'] ?? "Usuario";
+          _lat = userData['latitud'] != null
+              ? (userData['latitud'] as num).toDouble()
+              : null;
+          _lon = userData['longitud'] != null
+              ? (userData['longitud'] as num).toDouble()
+              : null;
+          _userPhotoUrl = userData['path_foto_perfil'];
+          _tutorialSuperado = tutorialSuperado || _hasShownTutorialSession;
+        });
+
+        if (_lat != null && _lon != null) {
+          _updateAddressDisplay(_lat!, _lon!);
+        } else {
+          setState(() => _userLocation = "");
         }
-      } catch (e) {
-        debugPrint("Error al cargar perfil usuario: $e");
       }
 
-      if (!tutorialStatus && !_hasShownTutorialSession) {
-        if (mounted) setState(() => _tutorialSuperado = false);
+      if (!tutorialSuperado && !_hasShownTutorialSession) {
         _hasShownTutorialSession = true;
-
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showTutorialPage(isInitial: true);
         });
-      } else {
-        if (mounted) setState(() => _tutorialSuperado = true);
       }
     } on DioException catch (e) {
       debugPrint("Error al cargar datos iniciales: ${e.message}");
-      if (mounted) setState(() => _tutorialSuperado = true);
+      // Si es 401, el interceptor ya disparará _handleTokenExpired
+      if (e.response?.statusCode != 401) {
+        if (mounted) setState(() => _tutorialSuperado = true);
+      }
     } catch (e) {
       debugPrint("Error general al cargar datos iniciales: $e");
       if (mounted) setState(() => _tutorialSuperado = true);
@@ -176,32 +173,36 @@ class _HomepageState extends State<HomePage> {
     // Evitamos mostrar múltiples diálogos si llegan varios 401 seguidos
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Obligar a pulsar el botón
-      builder: (context) => AlertDialog(
-        title: const Text("Sesión Caducada"),
-        content: const Text(
-            "Tu sesión ha expirado por seguridad. Por favor, inicia sesión de nuevo."),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop(); // Cerrar diálogo
-              await UserSession.clearSession(); // Limpiar datos locales
-              if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                  (route) => false,
-                );
-              }
-            },
-            child: const Text("Aceptar",
-                style: TextStyle(color: Color(0xFF142018))),
-          ),
-        ],
-      ),
-    );
+    // Usamos addPostFrameCallback para evitar conflictos si esto ocurre durante initState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Obligar a pulsar el botón
+        builder: (context) => AlertDialog(
+          title: const Text("Sesión Caducada"),
+          content: const Text(
+              "Tu sesión ha expirado por seguridad. Por favor, inicia sesión de nuevo."),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Cerrar diálogo
+                await UserSession.clearSession(); // Limpiar datos locales
+                if (mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              },
+              child: const Text("Aceptar",
+                  style: TextStyle(color: Color(0xFF142018))),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   void _showTutorialPage({required bool isInitial}) {
@@ -283,25 +284,18 @@ class _HomepageState extends State<HomePage> {
                       color: currentIndex == 1 ? Colors.black : Colors.white),
                 ),
                 GButton(
-                  icon: Icons.map,
-                  iconSize: 0,
-                  leading: Image.asset('assets/mapa/icon_map.png',
-                      width: 30,
-                      color: currentIndex == 2 ? Colors.black : Colors.white),
-                ),
-                GButton(
                   icon: Icons.menu_book,
                   iconSize: 0,
                   leading: Image.asset('assets/navbar/icon_nav_catalogo.png',
                       width: 30,
-                      color: currentIndex == 3 ? Colors.black : Colors.white),
+                      color: currentIndex == 2 ? Colors.black : Colors.white),
                 ),
                 GButton(
                   icon: Icons.forum,
                   iconSize: 0,
                   leading: Image.asset('assets/navbar/icon_nav_foro.png',
                       width: 30,
-                      color: currentIndex == 4 ? Colors.black : Colors.white),
+                      color: currentIndex == 3 ? Colors.black : Colors.white),
                 ),
               ],
             ),

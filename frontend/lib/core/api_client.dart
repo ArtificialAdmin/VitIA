@@ -296,23 +296,6 @@ class ApiClient {
     }
   }
 
-  // --- SECCIÓN TUTORIAL ---
-
-  /// Obtiene el estado 'tutorial_superado' del usuario actual (GET /users/me).
-  Future<bool> getTutorialStatus() async {
-    try {
-      // Esta llamada requiere que el token haya sido configurado previamente.
-      final response = await _dio.get('/users/me');
-
-      // La respuesta de /users/me contiene el objeto Usuario con el campo
-      return response.data['tutorial_superado'] as bool? ?? false;
-    } catch (e) {
-      print("Error al obtener el estado del tutorial (GET /users/me): $e");
-      // Fallback defensivo: Si falla (401, red), asumimos true para no bloquear el build
-      return true;
-    }
-  }
-
   /// Obtiene la información del usuario actual (GET /users/me).
   Future<Map<String, dynamic>> getMe() async {
     try {
