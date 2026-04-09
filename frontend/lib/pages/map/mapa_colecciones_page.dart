@@ -6,6 +6,7 @@ import '../../core/services/api_config.dart';
 import '../../core/services/user_sesion.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import '../gallery/detalle_coleccion_page.dart';
 
 class MapaColeccionesPage extends StatefulWidget {
   final String? initialModo;
@@ -274,10 +275,51 @@ class _MapaColeccionesPageState extends State<MapaColeccionesPage> {
                   ],
                 ),
                 const SizedBox(height: 10),
+              if (_modo == 'privado') ...[
+                const SizedBox(height: 25),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Cerrar bottom sheet
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetalleColeccionPage(
+                            coleccionItem: {
+                              'id': col['id_coleccion'],
+                              'nombre': col['variedad']?['nombre'] ?? 'Colección',
+                              'descripcion': col['notas'] ?? '',
+                              'latitud': lat,
+                              'longitud': lon,
+                              'es_publica': col['es_publica'],
+                              'imagen': col['path_foto_usuario'],
+                              'tipo': col['variedad']?['color'] ?? 'Tinta',
+                              'fecha_captura': col['fecha_captura'],
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.collections_outlined, color: Colors.white),
+                    label: const Text("Ver en mi colección"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF142018),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
               ],
-            ),
-          );
-        });
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
