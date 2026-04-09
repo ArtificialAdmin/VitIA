@@ -247,6 +247,7 @@ class Comentario(ComentarioBase, BaseConfig):
     id_publicacion: int
     id_padre: Optional[int] = None
     is_liked: Optional[bool] = None
+    borrado: bool = False
     
     autor: AutorComentario
     

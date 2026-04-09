@@ -425,12 +425,15 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   }
 
   Widget _buildComentario(dynamic c, {int level = 0, String? parentName}) {
-    final String texto = c['texto'] ?? "";
-    final autorObj = c['autor'] ?? c['usuario'];
+    final bool esBorrado = c['borrado'] ?? false;
+    final String texto = esBorrado ? "Este comentario ha sido eliminado" : (c['texto'] ?? "");
+    final autorObj = esBorrado ? null : (c['autor'] ?? c['usuario']);
+    
     final String autor = autorObj != null
         ? "${autorObj['nombre'] ?? 'Usuario'} ${autorObj['apellidos'] ?? ''}"
             .trim()
-        : "Anónimo";
+        : (esBorrado ? "Usuario eliminado" : "Anónimo");
+        
     final int? authorId = autorObj?['id_usuario'];
     final currentUserId = ref.read(userIdProvider);
     final String? fechaIso = c['fecha_comentario'];
@@ -452,8 +455,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                     ? NetworkImage(autorObj['path_foto_perfil'])
                     : null,
                 child: autorObj == null || autorObj['path_foto_perfil'] == null
-                    ? Text(autor.isNotEmpty ? autor[0].toUpperCase() : "?",
-                        style: const TextStyle(fontSize: 10))
+                    ? Icon(esBorrado ? Icons.remove_circle_outline : Icons.person, size: 14, color: Colors.grey)
                     : null,
               ),
               const SizedBox(width: 10),
@@ -475,8 +477,10 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                     Row(
                       children: [
                         Text(autor,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                fontSize: 13,
+                                color: esBorrado ? Colors.grey : Colors.black)),
                         const SizedBox(width: 8),
                         Text(fecha,
                             style: TextStyle(
@@ -484,53 +488,60 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text(texto, style: const TextStyle(fontSize: 14)),
+                    Text(texto, 
+                      style: TextStyle(
+                        fontSize: 14, 
+                        color: esBorrado ? Colors.grey.shade600 : Colors.black87,
+                        fontStyle: esBorrado ? FontStyle.italic : FontStyle.normal
+                      )),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _replyToId = c['id_comentario'];
-                              _replyToName = autor;
-                            });
-                          },
-                          child: Text("Responder",
-                              style: TextStyle(
-                                  color: Colors.blue.shade700,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                        if (authorId != null && authorId == currentUserId) ...[
-                          const SizedBox(width: 16),
+                    if (!esBorrado)
+                      Row(
+                        children: [
                           GestureDetector(
-                            onTap: () => _borrarComentario(c['id_comentario']),
-                            child: Text("Eliminar",
+                            onTap: () {
+                              setState(() {
+                                _replyToId = c['id_comentario'];
+                                _replyToName = autor;
+                              });
+                            },
+                            child: Text("Responder",
                                 style: TextStyle(
-                                    color: Colors.red.shade400,
+                                    color: Colors.blue.shade700,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold)),
                           ),
-                        ]
-                      ],
-                    ),
+                          if (authorId != null && authorId == currentUserId) ...[
+                            const SizedBox(width: 16),
+                            GestureDetector(
+                              onTap: () => _borrarComentario(c['id_comentario']),
+                              child: Text("Eliminar",
+                                  style: TextStyle(
+                                      color: Colors.red.shade400,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ]
+                        ],
+                      ),
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => _toggleLikeComentario(c['id_comentario']),
-                    child: Icon(
-                      (c['is_liked'] ?? false) ? Icons.favorite : Icons.favorite_border,
-                      size: 16,
-                      color: (c['is_liked'] ?? false) ? Colors.red : Colors.grey,
+              if (!esBorrado)
+                Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _toggleLikeComentario(c['id_comentario']),
+                      child: Icon(
+                        (c['is_liked'] ?? false) ? Icons.favorite : Icons.favorite_border,
+                        size: 16,
+                        color: (c['is_liked'] ?? false) ? Colors.red : Colors.grey,
+                      ),
                     ),
-                  ),
-                  Text("${c['likes'] ?? 0}",
-                      style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
-                ],
-              ),
+                    Text("${c['likes'] ?? 0}",
+                        style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                  ],
+                ),
             ],
           ),
         ),

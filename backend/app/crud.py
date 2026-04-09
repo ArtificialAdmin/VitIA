@@ -303,15 +303,17 @@ def get_comentarios_publicacion(db: Session, id_publicacion: int, skip: int = 0,
              .all()
 
 def delete_comentario(db: Session, id_comentario: int, id_usuario: int):
-    """Elimina un comentario si pertenece al usuario."""
+    """Marca un comentario como borrado y limpia su contenido si pertenece al usuario."""
     db_comentario = db.query(models.Comentario).filter(
         models.Comentario.id_comentario == id_comentario,
         models.Comentario.id_usuario == id_usuario
     ).first()
     
     if db_comentario:
-        db.delete(db_comentario)
+        db_comentario.borrado = True
+        db_comentario.texto = "Este comentario ha sido eliminado"
         db.commit()
+        db.refresh(db_comentario)
     return db_comentario
 
 # --- CRUD PARA COMPROBAR SI UN USUARIO TIENE REGISTRADA UNA VARIEDAD ---

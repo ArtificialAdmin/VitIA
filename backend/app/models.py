@@ -164,13 +164,14 @@ class Comentario(Base):
     texto = Column(Text, nullable=False)
     fecha_comentario = Column(DateTime(timezone=True), server_default=func.now())
     likes = Column(Integer, default=0)
+    borrado = Column(Boolean, default=False)
 
     # Claves foráneas
     id_usuario = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
     id_publicacion = Column(Integer, ForeignKey("Publicaciones.id_publicacion", ondelete="CASCADE"), nullable=False)
     
     # RELACIÓN RECURSIVA (Self-Referential): Un comentario puede tener un "padre"
-    id_padre = Column(Integer, ForeignKey("Comentarios.id_comentario", ondelete="CASCADE"), nullable=True)
+    id_padre = Column(Integer, ForeignKey("Comentarios.id_comentario"), nullable=True)
 
     # Relaciones
     autor = relationship("Usuario")
@@ -179,5 +180,4 @@ class Comentario(Base):
     # Esto permite acceder a los hijos: comentario.hijos (lista de respuestas)
     # y al padre: comentario.padre (el comentario al que respondes)
     hijos = relationship("Comentario", 
-                        backref=backref('padre', remote_side=[id_comentario]),
-                        cascade="all, delete-orphan")
+                        backref=backref('padre', remote_side=[id_comentario]))
