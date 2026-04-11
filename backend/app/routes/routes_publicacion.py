@@ -108,7 +108,8 @@ def read_publicaciones_endpoint(
         
         # Calcular total de comentarios (incluyendo respuestas)
         pub.num_comentarios = db.query(models.Comentario).filter(
-            models.Comentario.id_publicacion == pub.id_publicacion
+            models.Comentario.id_publicacion == pub.id_publicacion,
+            models.Comentario.borrado == False
         ).count()
 
     return publicaciones
@@ -145,7 +146,8 @@ def read_user_publicaciones_endpoint(
         
         # Calcular total de comentarios
         pub.num_comentarios = db.query(models.Comentario).filter(
-            models.Comentario.id_publicacion == pub.id_publicacion
+            models.Comentario.id_publicacion == pub.id_publicacion,
+            models.Comentario.borrado == False
         ).count()
 
     return publicaciones

@@ -174,8 +174,10 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   int _getTotalCommentsCount() {
     int count = 0;
     void countRecursive(List<dynamic> list) {
-      count += list.length;
       for (var c in list) {
+        if (c['borrado'] != true) {
+          count++;
+        }
         final hijos = c['hijos'] as List?;
         if (hijos != null && hijos.isNotEmpty) {
           countRecursive(hijos);
