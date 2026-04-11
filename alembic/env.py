@@ -2,8 +2,8 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from backend.app import models
-from backend.app.database import Base  # Asegúrate de importar tu Base aquí
+from backend.app.core import models
+from backend.app.core.database import Base
 
 from alembic import context
 

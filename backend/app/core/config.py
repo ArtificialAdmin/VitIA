@@ -3,7 +3,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
+# Si el archivo está en backend/app/core/config.py, subimos 3 niveles para llegar a backend/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  
 
 load_dotenv(BASE_DIR / ".env")
 
@@ -26,4 +27,4 @@ class Settings(BaseSettings):
 settings = Settings()
 
 print("[DEBUG] DATABASE_URL:", settings.DATABASE_URL)
-print("[DEBUG] SECRET_KEY:", settings.SECRET_KEY[:6] + "...")
+# print("[DEBUG] SECRET_KEY:", settings.SECRET_KEY[:6] + "...")

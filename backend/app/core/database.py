@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 from .config import settings
 
 # 1. URL de conexión completa (leída desde .env gracias a settings)
@@ -9,9 +8,8 @@ SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 # 2. El motor de SQLAlchemy
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    
-    pool_pre_ping=True,  # <--- IMPORTANTE: Verifica que la conexión esté viva
-    pool_recycle=300,    # Recicla conexiones cada 5 minutos
+    pool_pre_ping=True,
+    pool_recycle=300,
     pool_size=10,
     max_overflow=20
 )
