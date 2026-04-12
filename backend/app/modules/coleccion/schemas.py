@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from app.modules.usuarios.schemas import BaseConfig, AutorColeccion
-from app.modules.biblioteca.schemas import Variedad # Necesitaremos importar esto luego
+from app.modules.biblioteca.schemas import Variedad
 
 class ColeccionBase(BaseModel):
     """Campo base para un item de la colección."""
@@ -21,7 +21,7 @@ class Coleccion(ColeccionBase, BaseConfig):
     id_coleccion: int
     fecha_captura: datetime
     # Relación Anidada
-    variedad: dict # Devolvemos dict temporalmente hasta migrar biblioteca
+    variedad: Variedad
     propietario: AutorColeccion
 
 class ColeccionUpdate(BaseModel):

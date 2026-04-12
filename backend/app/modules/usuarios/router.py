@@ -7,6 +7,7 @@ from app.core import models
 from app.core.database import get_db
 from app.modules.auth.router import get_current_user
 from . import crud, schemas
+from app.modules.biblioteca import schemas as biblioteca_schemas
 
 # Inicializar ImageKit (Reutilizando configuración)
 from imagekitio import ImageKit
@@ -53,7 +54,7 @@ def delete_users_me(
     """Elimina permanentemente la cuenta del usuario autenticado."""
     return crud.delete_user(db, id_usuario=current_user.id_usuario)
 
-@router.get("/me/favoritos", response_model=List[dict], summary="Mis Favoritos")
+@router.get("/me/favoritos", response_model=List[biblioteca_schemas.Variedad], summary="Mis Favoritos")
 def get_mis_favoritos(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)

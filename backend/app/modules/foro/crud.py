@@ -33,6 +33,16 @@ def get_publicaciones(db: Session, skip: int = 0, limit: int = 100):
              .limit(limit)\
              .all()
 
+def get_user_publicaciones(db: Session, id_usuario: int, skip: int = 0, limit: int = 100):
+    """Obtiene las publicaciones de un usuario específico."""
+    return db.query(models.Publicacion)\
+             .filter(models.Publicacion.id_usuario == id_usuario)\
+             .options(joinedload(models.Publicacion.autor))\
+             .order_by(models.Publicacion.fecha_publicacion.desc())\
+             .offset(skip)\
+             .limit(limit)\
+             .all()
+
 def delete_publicacion(db: Session, db_publicacion: models.Publicacion):
     db.delete(db_publicacion)
     db.commit()

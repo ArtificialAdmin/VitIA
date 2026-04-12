@@ -1,11 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List
-
+from typing import List, Optional
 from app.core import models
 from app.core.database import get_db
 from app.modules.auth.router import get_current_user
 from . import crud, schemas
+
+# Inicializar ImageKit
+from imagekitio import ImageKit
+from app.core.config import settings
+from imagekitio.models.UploadFileRequestOptions import UploadFileRequestOptions
+
+imagekit = ImageKit(
+    public_key=settings.IMAGEKIT_PUBLIC_KEY,
+    private_key=settings.IMAGEKIT_PRIVATE_KEY,
+    url_endpoint=settings.IMAGEKIT_URL_ENDPOINT
+)
 
 router = APIRouter(
     prefix="/foro",
@@ -15,13 +25,42 @@ router = APIRouter(
 # --- PUBLICACIONES ---
 
 @router.post("/", response_model=schemas.Publicacion, summary="Crear publicación")
-def create_post(
-    publicacion: schemas.PublicacionCreate,
+async def create_post(
+    titulo: str = Form(...),
+    texto: str = Form(...),
+    es_publica: bool = Form(True),
+    latitud: Optional[float] = Form(None),
+    longitud: Optional[float] = Form(None),
+    file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Crea una nueva publicación en el foro."""
-    return crud.create_publicacion(db=db, publicacion=publicacion, id_usuario=current_user.id_usuario)
+    """Crea una nueva publicación con soporte para imagen opcional."""
+    try:
+        url_foto = None
+        if file:
+            file_bytes = await file.read()
+            upload_res = imagekit.upload_file(
+                file=file_bytes,
+                file_name=file.filename,
+                options=UploadFileRequestOptions(
+                    folder="/vitia/foro/",
+                    use_unique_file_name=True
+                )
+            )
+            url_foto = upload_res.url
+
+        new_post = schemas.PublicacionCreate(
+            titulo=titulo,
+            texto=texto,
+            es_publica=es_publica,
+            latitud=latitud,
+            longitud=longitud,
+            links_fotos=[url_foto] if url_foto else []
+        )
+        return crud.create_publicacion(db=db, publicacion=new_post, id_usuario=current_user.id_usuario)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en el foro: {str(e)}")
 
 @router.get("/", response_model=List[schemas.Publicacion], summary="Listar publicaciones")
 def list_posts(
@@ -40,7 +79,27 @@ def list_posts(
             id_publicacion=post.id_publicacion
         ).first()
         post.is_liked = voto.es_like if voto else None
-        post.num_comentarios = len(post.comentarios)
+        post.num_comentarios = sum(1 for c in post.comentarios if c.borrado is not True)
+        
+    return publicaciones
+
+@router.get("/me", response_model=List[schemas.Publicacion], summary="Mis publicaciones")
+def list_my_posts(
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Obtiene las publicaciones del usuario autenticado."""
+    publicaciones = crud.get_user_publicaciones(db, id_usuario=current_user.id_usuario, skip=skip, limit=limit)
+    
+    for post in publicaciones:
+        voto = db.query(models.VotoPublicacion).filter_by(
+            id_usuario=current_user.id_usuario, 
+            id_publicacion=post.id_publicacion
+        ).first()
+        post.is_liked = voto.es_like if voto else None
+        post.num_comentarios = sum(1 for c in post.comentarios if c.borrado is not True)
         
     return publicaciones
 
@@ -60,6 +119,7 @@ def get_post(
         id_publicacion=id_publicacion
     ).first()
     post.is_liked = voto.es_like if voto else None
+    post.num_comentarios = sum(1 for c in post.comentarios if c.borrado is not True)
     return post
 
 @router.delete("/{id_publicacion}", summary="Borrar publicación")
