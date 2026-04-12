@@ -1,6 +1,7 @@
 // lib/pages/auth/login_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:vinas_mobile/shared/widgets/vitia_logo.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'auth_register_page.dart';
@@ -77,8 +78,14 @@ class _LoginPageState extends State<AuthLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _authMainColor, // Fondo color Vino VitIA
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent, // Barra transparente
+        statusBarIconBrightness: Brightness.light, // Iconos claros para Android
+        statusBarBrightness: Brightness.dark, // Iconos claros para iOS
+      ),
+      child: Scaffold(
+        backgroundColor: _authMainColor, // Fondo color Vino VitIA
       // Botón flotante discreto para configuración (DESHABILITADO: Comenta si necesitas cambiar IP manual)
       floatingActionButton: FloatingActionButton.small(
         backgroundColor: Colors.white.withOpacity(0.2),
@@ -181,6 +188,7 @@ class _LoginPageState extends State<AuthLoginPage> {
         ),
       ),
       // <<< BARRA DE NAVEGACIÓN SIMULADA ELIMINADA >>>
+    ),
     );
   }
 }

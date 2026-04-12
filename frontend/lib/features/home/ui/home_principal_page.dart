@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:dio/dio.dart';
 
@@ -28,8 +28,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
   int currentIndex = 0;
 
   bool _isAuthenticated = false;
-  bool _tutorialSuperado = true;
-  bool _isLoadingStatus = true;
+
   bool _hasShownTutorialSession = false; // Flag para mostrar solo una vez
   String _userName = "Usuario";
   String _userLocation = "";
@@ -48,8 +47,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
           onProfileTap: () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (_) => const PerfilPrincipalPage()),
+              MaterialPageRoute(builder: (_) => const PerfilPrincipalPage()),
             );
             if (result == true) {
               _checkTutorialStatus();
@@ -62,7 +60,8 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
           initialTab: 0,
           onCameraTap: () {
             setState(() {
-              currentIndex = 1; // Cambia al tab de cámara (ColeccionCapturaPage)
+              currentIndex =
+                  1; // Cambia al tab de cámara (ColeccionCapturaPage)
             });
           },
         ),
@@ -76,7 +75,8 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
   }
 
   bool _checkIsAuthenticated() {
-    return AuthSessionService.token != null && AuthSessionService.token!.isNotEmpty;
+    return AuthSessionService.token != null &&
+        AuthSessionService.token!.isNotEmpty;
   }
 
   void _checkAuthAndTutorial() {
@@ -97,12 +97,12 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
 
   Future<void> _checkTutorialStatus() async {
     if (!mounted) return;
-    setState(() => _isLoadingStatus = true);
 
     try {
       // Optimizamos: Una sola llamada para Tutorial y Perfil
       final userData = await ref.read(apiProvider).getMe();
-      final bool tutorialSuperado = userData['tutorial_superado'] as bool? ?? false;
+      final bool tutorialSuperado =
+          userData['tutorial_superado'] as bool? ?? false;
 
       if (mounted) {
         setState(() {
@@ -114,7 +114,8 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
               ? (userData['longitud'] as num).toDouble()
               : null;
           _userPhotoUrl = userData['path_foto_perfil'];
-          _tutorialSuperado = tutorialSuperado || _hasShownTutorialSession;
+          // _tutorialSuperado is not used, but we keep the logic update if needed later
+          // _tutorialSuperado = tutorialSuperado || _hasShownTutorialSession;
         });
 
         if (_lat != null && _lon != null) {
@@ -134,14 +135,12 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
       debugPrint("Error al cargar datos iniciales: ${e.message}");
       // Si es 401, el interceptor ya disparará _handleTokenExpired
       if (e.response?.statusCode != 401) {
-        if (mounted) setState(() => _tutorialSuperado = true);
+        // if (mounted) setState(() => _tutorialSuperado = true);
       }
     } catch (e) {
       debugPrint("Error general al cargar datos iniciales: $e");
-      if (mounted) setState(() => _tutorialSuperado = true);
-    } finally {
-      if (mounted) setState(() => _isLoadingStatus = false);
-    }
+      // if (mounted) setState(() => _tutorialSuperado = true);
+    } finally {}
   }
 
   Future<void> _updateAddressDisplay(double lat, double lon) async {
@@ -169,9 +168,9 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
           isCompulsory: isInitial,
           onFinished: () {
             Navigator.of(context).pop();
-            if (mounted) {
+            /* if (mounted) {
               setState(() => _tutorialSuperado = true);
-            }
+            } */
           },
         ),
       ),
@@ -194,72 +193,81 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
     const Color darkBarColor = Color(0xFF142018); // Negro VitIA
     const Color activeTabColor = Colors.white;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      extendBody: true,
-      body: SafeArea(
-        bottom: false,
-        child: _screens[currentIndex],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent, // Barra transparente
+        statusBarIconBrightness: Brightness.dark, // Iconos oscuros para Android
+        statusBarBrightness: Brightness.light, // Iconos oscuros para iOS
       ),
-      // BARRA DE NAVEGACIÓN FLOTANTE (ESTILO ORIGINAL RESTAURADO)
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
-        child: Container(
-          decoration: BoxDecoration(
-            color: darkBarColor,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: darkBarColor.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-            child: GNav(
-              gap: 8,
-              color: Colors.white70,
-              activeColor: Colors.black, // Color del icono cuando está activo
-              tabBackgroundColor: activeTabColor, // Fondo blanco sólido al presionar
-              tabBorderRadius: 100,
-              padding: const EdgeInsets.all(12),
-              selectedIndex: currentIndex,
-              onTabChange: (index) {
-                setState(() => currentIndex = index);
-              },
-              tabs: [
-                GButton(
-                  icon: Icons.home,
-                  iconSize: 0,
-                  leading: Image.asset('assets/navbar/icon_nav_home.png',
-                      width: 30,
-                      color: currentIndex == 0 ? Colors.black : Colors.white),
-                ),
-                GButton(
-                  icon: Icons.camera_alt_outlined,
-                  iconSize: 0,
-                  leading: Image.asset('assets/navbar/icon_nav_camera.png',
-                      width: 30,
-                      color: currentIndex == 1 ? Colors.black : Colors.white),
-                ),
-                GButton(
-                  icon: Icons.menu_book,
-                  iconSize: 0,
-                  leading: Image.asset('assets/navbar/icon_nav_catalogo.png',
-                      width: 30,
-                      color: currentIndex == 2 ? Colors.black : Colors.white),
-                ),
-                GButton(
-                  icon: Icons.forum,
-                  iconSize: 0,
-                  leading: Image.asset('assets/navbar/icon_nav_foro.png',
-                      width: 30,
-                      color: currentIndex == 3 ? Colors.black : Colors.white),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        extendBody: true,
+        body: SafeArea(
+          bottom: false,
+          child: _screens[currentIndex],
+        ),
+        // BARRA DE NAVEGACIÓN FLOTANTE (ESTILO ORIGINAL RESTAURADO)
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
+          child: Container(
+            decoration: BoxDecoration(
+              color: darkBarColor,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: darkBarColor.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
               ],
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+              child: GNav(
+                gap: 8,
+                color: Colors.white70,
+                activeColor: Colors.black, // Color del icono cuando está activo
+                tabBackgroundColor:
+                    activeTabColor, // Fondo blanco sólido al presionar
+                tabBorderRadius: 100,
+                padding: const EdgeInsets.all(12),
+                selectedIndex: currentIndex,
+                onTabChange: (index) {
+                  setState(() => currentIndex = index);
+                },
+                tabs: [
+                  GButton(
+                    icon: Icons.home,
+                    iconSize: 0,
+                    leading: Image.asset('assets/navbar/icon_nav_home.png',
+                        width: 30,
+                        color: currentIndex == 0 ? Colors.black : Colors.white),
+                  ),
+                  GButton(
+                    icon: Icons.camera_alt_outlined,
+                    iconSize: 0,
+                    leading: Image.asset('assets/navbar/icon_nav_camera.png',
+                        width: 30,
+                        color: currentIndex == 1 ? Colors.black : Colors.white),
+                  ),
+                  GButton(
+                    icon: Icons.menu_book,
+                    iconSize: 0,
+                    leading: Image.asset('assets/navbar/icon_nav_catalogo.png',
+                        width: 30,
+                        color: currentIndex == 2 ? Colors.black : Colors.white),
+                  ),
+                  GButton(
+                    icon: Icons.forum,
+                    iconSize: 0,
+                    leading: Image.asset('assets/navbar/icon_nav_foro.png',
+                        width: 30,
+                        color: currentIndex == 3 ? Colors.black : Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

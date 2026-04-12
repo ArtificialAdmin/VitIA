@@ -1,6 +1,7 @@
 // lib/pages/auth/login_form_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,8 +95,14 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _authMainColor,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: _authMainColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -206,6 +213,7 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
           ),
         ),
       ),
+    ),
     );
   }
 }
