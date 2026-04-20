@@ -24,7 +24,7 @@ class _LoginPageState extends State<AuthLoginPage> {
   void _showServerConfigDialog(BuildContext context) {
     // Controlador con la URL actual o la por defecto
     final TextEditingController urlCtrl = TextEditingController(
-      text: AuthSessionService.baseUrl ?? 'http://127.0.0.1:8000',
+      text: AuthSessionService.baseUrl ?? 'http://192.168.0.105:8000',
     );
 
     showDialog(
@@ -43,7 +43,7 @@ class _LoginPageState extends State<AuthLoginPage> {
                 controller: urlCtrl,
                 decoration: const InputDecoration(
                   labelText: "IP Local",
-                  hintText: "http://192.168.x.x:8000",
+                  hintText: "http://192.168.0.105:8000",
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -176,7 +176,7 @@ class _LoginPageState extends State<AuthLoginPage> {
 
                 // Indicador de estado
                 Text(
-                  "Conectado a: ${AuthSessionService.baseUrl?.isNotEmpty == true ? AuthSessionService.baseUrl : 'Localhost (Default)'}",
+                  "Conectado a: ${AuthSessionService.baseUrl?.isNotEmpty == true ? AuthSessionService.baseUrl : '192.168.0.105 (Default)'}",
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),

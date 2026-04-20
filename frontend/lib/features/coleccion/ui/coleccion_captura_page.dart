@@ -14,6 +14,8 @@ import 'package:intl/intl.dart'; // Standard date formatting if available, or ju
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/features/perfil/providers/perfil_state_provider.dart';
+import 'package:vinas_mobile/features/coleccion/ui/widgets/premium_guide_overlay.dart';
 
 class GroupedResult {
   final String variety;
@@ -59,6 +61,14 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   bool _isSaving = false;
 
   List<XFile> _capturedPhotos = [];
+  
+  // Premium / Advanced Mode State
+  bool _isAdvancedMode = false;
+  PremiumStep _premiumStep = PremiumStep.leafFront;
+  // Temporary storage for photos of the CURRENT premium step
+  final List<XFile> _currentStepPhotos = [];
+  // Final storage for all premium photos
+  final List<XFile> _allPremiumPhotos = [];
 
   // Now we store a LIST of groups
   List<GroupedResult> _results = [];
@@ -181,6 +191,41 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     }
   }
 
+  void _toggleAdvancedMode(bool value) {
+    setState(() {
+      _isAdvancedMode = value;
+      _premiumStep = PremiumStep.leafFront;
+      _currentStepPhotos.clear();
+      _allPremiumPhotos.clear();
+      _capturedPhotos.clear();
+      _uiState = 0;
+      if (_sheetController.isAttached) {
+        _sheetController.animateTo(0.15, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      }
+    });
+  }
+
+  void _onNextPremiumStep() {
+    setState(() {
+      _allPremiumPhotos.addAll(_currentStepPhotos);
+      _currentStepPhotos.clear();
+      
+      if (_premiumStep.index < PremiumStep.values.length - 1) {
+        _premiumStep = PremiumStep.values[_premiumStep.index + 1];
+      } else {
+        // Finished all 4 types
+        _capturedPhotos = List.from(_allPremiumPhotos);
+        _identifyPhotos();
+      }
+    });
+  }
+
+  void _removeCurrentStepPhoto(int index) {
+    setState(() {
+      _currentStepPhotos.removeAt(index);
+    });
+  }
+
   // --- ACTIONS ---
 
   Future<void> _takePhoto() async {
@@ -193,16 +238,24 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         photo = await _cameraController!.takePicture();
       }
 
-      setState(() {
-        _capturedPhotos.add(photo);
-      });
-      // Expand sheet to show the captured photo
-      if (_sheetController.isAttached) {
-        _sheetController.animateTo(
-          0.5,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
+      if (_isAdvancedMode) {
+        setState(() {
+          _currentStepPhotos.add(photo);
+          // We NO LONGER auto-advance here. 
+          // The user must click "Next Step" or "Finish"
+        });
+      } else {
+        setState(() {
+          _capturedPhotos.add(photo);
+        });
+        // Expand sheet to show the captured photo
+        if (_sheetController.isAttached) {
+          _sheetController.animateTo(
+            0.5,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error taking photo: $e");
@@ -310,8 +363,12 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         String variety = "Desconocido";
         double confidence = 0.0;
 
-        // Simulation Check
-        if (_useSimulatedCamera && photo.path == 'simulated_path') {
+        // Mock Result logic for Advanced Mode
+        if (_isAdvancedMode) {
+          await Future.delayed(const Duration(seconds: 2));
+          variety = "Garnacha Tinta (Premium)";
+          confidence = 99.8;
+        } else if (_useSimulatedCamera && photo.path == 'simulated_path') {
           await Future.delayed(const Duration(milliseconds: 500));
           variety = "Moscatel";
           confidence = 98.2;
@@ -461,11 +518,15 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
 
   void _reset() {
+    // Reset premium state too
     setState(() {
       _uiState = 0;
       _capturedPhotos.clear();
       _results.clear();
       _currentResultIndex = 0;
+      _premiumStep = PremiumStep.leafFront;
+      _currentStepPhotos.clear();
+      _allPremiumPhotos.clear();
     });
     // Animate back to initial capture size
     if (_sheetController.isAttached) {
@@ -486,31 +547,150 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 1. Camera Layer
-          Positioned.fill(
-            child: _buildCameraView(),
+          // 1. MAIN LAYOUT (Viewfinder + Dock)
+          Column(
+            children: [
+              // TOP: VIEW FINDER AREA
+              Expanded(
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: _buildCameraView()),
+                    
+                    // Guides & Toggle over the camera ONLY
+                    if (_uiState == 0) ...[
+                      // Mode Toggle
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 20,
+                        left: 0,
+                        right: 0,
+                        child: Center(child: _buildModeToggle()),
+                      ),
+
+                      Positioned.fill(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: _isAdvancedMode
+                              ? PremiumGuideOverlay(
+                                  step: _premiumStep,
+                                  label: _getPremiumLabel(),
+                                )
+                              : const ScannerOverlay(),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // BOTTOM: CONTROL DOCK (Black bar for thumbnails & buttons)
+              if (_uiState == 0) _buildControlDock(),
+            ],
           ),
 
-          // 2. Camera Controls
-          if (_uiState == 0) ...[
-            Positioned(
-              left: 0, right: 0,
-              top: MediaQuery.of(context).padding.top + 100,
-              bottom: 350, // Moved up from 250
-              child: const ScannerOverlay(),
-            ),
-            Positioned(
-              left: 0, right: 0,
-              bottom: 220, // Moved up from 120
-              child: _buildCameraControls(),
-            ),
-          ],
-
-          // 3. Top Bar - REMOVED CLOSE BUTTON as requested
-
-          // 4. Draggable Bottom Sheet
+          // 2. DRAGGABLE SHEET (Always on top)
           _buildDraggableSheet(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildControlDock() {
+    return Container(
+      padding: const EdgeInsets.only(top: 16, bottom: 32),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A0F0A), // Very dark solid dock
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Review Gallery (Thumbnails)
+          if (_isAdvancedMode && _currentStepPhotos.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildPhotoReviewGallery(),
+            ),
+
+          // 2. Counter and Next Button (NOW ABOVE TRIGGER)
+          if (_isAdvancedMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildPhotoCounter(),
+                  if (_currentStepPhotos.isNotEmpty) _buildNextStepButton(),
+                ],
+              ),
+            ),
+
+          if (_isAdvancedMode) const SizedBox(height: 12),
+
+          // 3. Main Controls (Flash, Trigger, Switch)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _currentFlashModeIcon(),
+                    _cameraSwitchIcon(),
+                  ],
+                ),
+                _buildTriggerButton(),
+              ],
+            ),
+          ),
+
+          // EXTRA SPACE to ensure buttons are above the bottom sheet handle
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  // Refactored helper widgets for the new Dock
+  Widget _currentFlashModeIcon() {
+    return IconButton(
+      icon: Icon(
+        _currentFlashMode == FlashMode.off
+            ? Icons.flash_off
+            : _currentFlashMode == FlashMode.auto
+                ? Icons.flash_auto
+                : Icons.flash_on,
+        color: Colors.white,
+        size: 28,
+      ),
+      onPressed: _onToggleFlash,
+    );
+  }
+
+  Widget _cameraSwitchIcon() {
+    return IconButton(
+      icon: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 28),
+      onPressed: _onSwitchCamera,
+    );
+  }
+
+  Widget _buildTriggerButton() {
+    return GestureDetector(
+      onTap: _takePhoto,
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 4),
+        ),
+        child: Center(
+          child: Container(
+            width: 62,
+            height: 62,
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+          ),
+        ),
       ),
     );
   }
@@ -529,52 +709,164 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     return CameraPreview(_cameraController!);
   }
 
-  Widget _buildCameraControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+  Widget _buildModeToggle() {
+    final userAsync = ref.watch(userProfileProvider);
+
+    return userAsync.when(
+      data: (user) {
+        if (user['es_premium'] != true) return const SizedBox();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black38,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _toggleItem("Rápido", !_isAdvancedMode, () => _toggleAdvancedMode(false)),
+              _toggleItem("Avanzado", _isAdvancedMode, () => _toggleAdvancedMode(true), isPremium: true),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(),
+      error: (_, __) => const SizedBox(),
+    );
+  }
+
+  Widget _toggleItem(String title, bool active, VoidCallback onTap, {bool isPremium = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? (isPremium ? const Color(0xFFD4AF37) : Colors.white) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          children: [
+            if (isPremium) ...[
+              Icon(Icons.stars, size: 16, color: active ? Colors.black : const Color(0xFFD4AF37)),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              title,
+              style: TextStyle(
+                color: active ? Colors.black : Colors.white70,
+                fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNextStepButton() {
+    bool isLast = _premiumStep == PremiumStep.singleGrape;
+    return ElevatedButton.icon(
+      onPressed: _onNextPremiumStep,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFD4AF37),
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        elevation: 10,
+      ),
+      icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward),
+      label: Text(
+        isLast ? "Finalizar" : "Siguiente Fase",
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildPhotoCounter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black45,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white24),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: Icon(
-              _currentFlashMode == FlashMode.off
-                  ? Icons.flash_off
-                  : _currentFlashMode == FlashMode.auto
-                      ? Icons.flash_auto
-                      : Icons.flash_on,
-              color: Colors.white,
-              size: 28,
-            ),
-            onPressed: _onToggleFlash,
-          ),
-          GestureDetector(
-            onTap: _takePhoto,
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-              ),
-              child: Center(
-                child: Container(
-                  width: 62,
-                  height: 62,
-                  decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle),
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.cameraswitch_outlined,
-                color: Colors.white, size: 28),
-            onPressed: _onSwitchCamera,
+          const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            "${_currentStepPhotos.length} fotos",
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildPhotoReviewGallery() {
+    return Container(
+      height: 90,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _currentStepPhotos.length,
+        itemBuilder: (context, index) {
+          final photo = _currentStepPhotos[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 12),
+            width: 70,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 2),
+              image: DecorationImage(
+                image: photo.path == 'simulated_path' 
+                   ? const NetworkImage('https://images.unsplash.com/photo-1596244956306-a9df17907407?auto=format&fit=crop&w=200') as ImageProvider
+                   : FileImage(File(photo.path)),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: IconButton(
+                    iconSize: 20,
+                    icon: const CircleAvatar(
+                      backgroundColor: Colors.red,
+                      radius: 10,
+                      child: Icon(Icons.close, size: 14, color: Colors.white),
+                    ),
+                    onPressed: () => _removeCurrentStepPhoto(index),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _getPremiumLabel() {
+    switch (_premiumStep) {
+      case PremiumStep.leafFront:
+        return "Fase 1/4: Haz de la hoja\n(Encuadra la hoja de frente)";
+      case PremiumStep.leafBack:
+        return "Fase 2/4: Envés de la hoja\n(Dale la vuelta a la hoja)";
+      case PremiumStep.cluster:
+        return "Fase 3/4: Racimo\n(Encuadra el racimo completo)";
+      case PremiumStep.singleGrape:
+        return "Fase 4/4: Uva individual\n(Acerca la cámara a una uva)";
+    }
+  }
+
+  // Legacy helper removed in favor of _buildControlDock and trigger helpers
 
   Widget _buildDraggableSheet() {
     double minSize = 0.15;
@@ -930,7 +1222,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                           Positioned(
                             left: 8,
                             top: 0,
-                            bottom: 0,
+                            bottom: 100,
                             child: Center(
                               child: CircleAvatar(
                                 backgroundColor: Colors.black26,
@@ -952,7 +1244,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                           Positioned(
                             right: 8,
                             top: 0,
-                            bottom: 0,
+                            bottom: 100,
                             child: Center(
                               child: CircleAvatar(
                                 backgroundColor: Colors.black26,

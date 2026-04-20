@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 
 // La dirección de desarrollo de tu servidor FastAPI/Uvicorn (localhost para Web/Desktop)
-const String _localHostUrl = 'http://localhost:8000';
+const String _localHostUrl = 'http://192.168.0.105:8000';
 
 // Configuración de WeatherAPI
 const String weatherBaseUrl = 'http://api.weatherapi.com/v1';
