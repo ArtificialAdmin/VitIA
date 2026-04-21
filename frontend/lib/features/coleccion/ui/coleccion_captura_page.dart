@@ -363,19 +363,20 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         String variety = "Desconocido";
         double confidence = 0.0;
 
-        // Mock Result logic for Advanced Mode
+        final api = ref.read(apiProvider);
+        final List<PredictionModel> predictions;
+
         if (_isAdvancedMode) {
-          await Future.delayed(const Duration(seconds: 2));
-          variety = "Garnacha Tinta (Premium)";
-          confidence = 99.8;
-        } else if (_useSimulatedCamera && photo.path == 'simulated_path') {
-          await Future.delayed(const Duration(milliseconds: 500));
-          variety = "Moscatel";
-          confidence = 98.2;
+          // Send ALL captured photos to the premium endpoint
+          predictions = await api.predictImagePremium(_capturedPhotos);
+          if (predictions.isNotEmpty) {
+            variety = predictions.first.variedad;
+            confidence = predictions.first.confianza;
+          }
         } else {
-          // Real API
-          final predictions = await ref.read(apiProvider).predictImage(photo);
-          if (predictions != null && predictions.isNotEmpty) {
+          // Regular mode sends only one photo
+          predictions = await api.predictImageBase(photo);
+          if (predictions.isNotEmpty) {
             variety = predictions.first.variedad;
             confidence = predictions.first.confianza;
           }

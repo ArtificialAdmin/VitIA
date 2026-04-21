@@ -96,7 +96,8 @@ class ApiClient {
 
   // Biblioteca / IA
   Future<List<dynamic>> getVariedades() => _biblioteca.getVariedades();
-  Future<List<PredictionModel>> predictImage(XFile file) => _biblioteca.predictImage(file);
+  Future<List<PredictionModel>> predictImageBase(XFile file) => _biblioteca.predictImageBase(file);
+  Future<List<PredictionModel>> predictImagePremium(List<XFile> files) => _biblioteca.predictImagePremium(files);
 
   // Usuarios / Perfil
   Future<Map<String, dynamic>> getMe() => _perfil.getMe();

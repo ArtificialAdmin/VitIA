@@ -37,3 +37,14 @@ class VariedadUpdate(BaseModel):
 class Variedad(VariedadBase, BaseConfig):
     """Esquema para LEER una Variedad."""
     id_variedad: int
+
+# --- AI SCHEMAS ---
+
+class PredictionResult(BaseModel):
+    """Resultado individual de una predicción de IA."""
+    variedad: str
+    confianza: float
+
+class PredictionResponse(BaseModel):
+    """Respuesta completa del servicio de IA."""
+    predicciones: List[PredictionResult]

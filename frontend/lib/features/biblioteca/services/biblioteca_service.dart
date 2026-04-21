@@ -17,7 +17,7 @@ class BibliotecaService {
     }
   }
 
-  Future<List<PredictionModel>> predictImage(XFile file) async {
+  Future<List<PredictionModel>> predictImageBase(XFile file) async {
     try {
       final bytes = await file.readAsBytes();
       FormData formData = FormData.fromMap({
@@ -29,6 +29,30 @@ class BibliotecaService {
       });
 
       final response = await _dio.post('/ia/predict', data: formData);
+      final List<dynamic> rawList = response.data['predicciones'];
+      return rawList.map((e) => PredictionModel.fromJson(e)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<PredictionModel>> predictImagePremium(List<XFile> files) async {
+    try {
+      final List<MultipartFile> multipartFiles = [];
+      for (var file in files) {
+        final bytes = await file.readAsBytes();
+        multipartFiles.add(MultipartFile.fromBytes(
+          bytes,
+          filename: file.name,
+          contentType: MediaType('image', 'jpeg'),
+        ));
+      }
+
+      FormData formData = FormData.fromMap({
+        "files": multipartFiles,
+      });
+
+      final response = await _dio.post('/ia/predict-premium', data: formData);
       final List<dynamic> rawList = response.data['predicciones'];
       return rawList.map((e) => PredictionModel.fromJson(e)).toList();
     } catch (e) {
