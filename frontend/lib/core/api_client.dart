@@ -86,8 +86,26 @@ class ApiClient {
   Future<void> deleteComentario(int idComentario) => _foro.deleteComentario(idComentario);
 
   // Coleccion
-  Future<void> saveToCollection({required XFile imageFile, required String nombreVariedad, String? notas, double? lat, double? lon, bool esPublica = true}) 
-    => _coleccion.saveToCollection(imageFile: imageFile, nombreVariedad: nombreVariedad, notas: notas, lat: lat, lon: lon, esPublica: esPublica);
+  Future<void> saveToCollection({
+    required XFile imageFile,
+    required String nombreVariedad,
+    String? notas,
+    double? lat,
+    double? lon,
+    bool esPublica = true,
+    List<XFile>? premiumFiles,
+    String? analisisIA,
+  }) =>
+      _coleccion.saveToCollection(
+        imageFile: imageFile,
+        nombreVariedad: nombreVariedad,
+        notas: notas,
+        lat: lat,
+        lon: lon,
+        esPublica: esPublica,
+        premiumFiles: premiumFiles,
+        analisisIA: analisisIA,
+      );
   Future<List<dynamic>> getCollection() => _coleccion.getCollection();
   Future<List<dynamic>> getUserCollection() => _coleccion.getCollection(); // Legacy support
   Future<void> updateCollectionItem(int idColeccion, Map<String, dynamic> updates) => _coleccion.updateCollectionItem(idColeccion, updates);
@@ -97,7 +115,7 @@ class ApiClient {
   // Biblioteca / IA
   Future<List<dynamic>> getVariedades() => _biblioteca.getVariedades();
   Future<List<PredictionModel>> predictImageBase(XFile file) => _biblioteca.predictImageBase(file);
-  Future<List<PredictionModel>> predictImagePremium(List<XFile> files) => _biblioteca.predictImagePremium(files);
+  Future<Map<String, dynamic>> predictImagePremium(List<XFile> files) => _biblioteca.predictImagePremium(files);
 
   // Usuarios / Perfil
   Future<Map<String, dynamic>> getMe() => _perfil.getMe();

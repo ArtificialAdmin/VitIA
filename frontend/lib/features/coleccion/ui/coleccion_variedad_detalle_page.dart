@@ -277,7 +277,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Mis fotos (${_captures.length})",
+                              "Mis identificaciones (${_captures.length})",
                               style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             if (_isLoading)
@@ -375,13 +375,24 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                   Positioned(
                       top: 8,
                       right: 8,
-                      child: GestureDetector(
-                        onTap: () => _setAsCover(item['imagen']),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
-                          child: Icon(_customCoverPath == item['imagen'] ? Icons.star : Icons.star_border, size: 20, color: Colors.orange),
-                        ),
+                      child: Row(
+                        children: [
+                          if (item['es_premium'] == true)
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+                              child: const Icon(Icons.auto_awesome, size: 16, color: Colors.amber),
+                            ),
+                          GestureDetector(
+                            onTap: () => _setAsCover(item['imagen']),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+                              child: Icon(_customCoverPath == item['imagen'] ? Icons.star : Icons.star_border, size: 20, color: Colors.orange),
+                            ),
+                          ),
+                        ],
                       ))
                 ],
               ),

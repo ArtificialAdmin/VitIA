@@ -11,6 +11,10 @@ class ColeccionBase(BaseModel):
     latitud: Optional[float] = None
     longitud: Optional[float] = None
     es_publica: bool = True
+    # Soporte Premium
+    fotos_premium: Optional[List[str]] = None
+    analisis_ia: Optional[str] = None
+    es_premium: bool = False
 
 class ColeccionCreate(ColeccionBase):
     """Esquema para crear un item en la colección."""

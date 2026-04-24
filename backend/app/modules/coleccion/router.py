@@ -30,6 +30,8 @@ from app.modules.biblioteca import crud as biblio_crud
 @router.post("/", response_model=schemas.Coleccion, summary="Añadir a colección")
 async def create_item(
     file: UploadFile = File(...),
+    premium_files: Optional[List[UploadFile]] = File(None),
+    analisis_ia: Optional[str] = Form(None),
     nombre_variedad: str = Form(...),
     notas: Optional[str] = Form(None),
     latitud: Optional[float] = Form(None),
@@ -40,10 +42,8 @@ async def create_item(
 ):
     """Guarda una nueva captura enviada como MultipartForm."""
     try:
-        # 1. Leer archivo
+        # 1. Subir Imagen Principal (Portada)
         file_bytes = await file.read()
-        
-        # 2. Subir a ImageKit
         upload_res = imagekit.upload_file(
             file=file_bytes,
             file_name=file.filename,
@@ -52,7 +52,23 @@ async def create_item(
                 use_unique_file_name=True
             )
         )
-        
+        cover_url = upload_res.url
+
+        # 2. Subir Imágenes Premium si existen
+        premium_urls = []
+        if premium_files:
+            for p_file in premium_files:
+                p_bytes = await p_file.read()
+                p_upload = imagekit.upload_file(
+                    file=p_bytes,
+                    file_name=p_file.filename,
+                    options=UploadFileRequestOptions(
+                        folder="/vitia/colecciones/premium/",
+                        use_unique_file_name=True
+                    )
+                )
+                premium_urls.append(p_upload.url)
+
         # 3. Buscar/Crear ID de variedad por nombre
         variedad = biblio_crud.get_variedad_by_nombre(db, nombre_variedad)
         if not variedad:
@@ -61,16 +77,19 @@ async def create_item(
         # 4. Crear item en DB
         new_item = schemas.ColeccionCreate(
             id_variedad=variedad.id_variedad,
-            path_foto_usuario=upload_res.url,
+            path_foto_usuario=cover_url,
+            fotos_premium=premium_urls if premium_urls else None,
+            analisis_ia=analisis_ia,
             notas=notas,
             latitud=latitud,
             longitud=longitud,
-            es_publica=es_publica
+            es_publica=es_publica,
+            es_premium=True if premium_urls else False
         )
         
         return crud.create_coleccion_item(db=db, item=new_item, id_usuario=current_user.id_usuario)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al subir imagen: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al procesar la captura: {str(e)}")
 
 @router.get("/", response_model=List[schemas.Coleccion], summary="Mi Colección")
 def list_items(

@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/perfil/providers/perfil_state_provider.dart';
+import 'package:vinas_mobile/features/coleccion/ui/premium_result_page.dart';
 import 'package:vinas_mobile/features/coleccion/ui/widgets/premium_guide_overlay.dart';
 
 class GroupedResult {
@@ -368,14 +369,36 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
         if (_isAdvancedMode) {
           // Send ALL captured photos to the premium endpoint
-          predictions = await api.predictImagePremium(_capturedPhotos);
-          if (predictions.isNotEmpty) {
-            variety = predictions.first.variedad;
-            confidence = predictions.first.confianza;
+          final response = await api.predictImagePremium(_capturedPhotos);
+          final List<PredictionModel> premiumPredictions = response["predictions"];
+          final String premiumAnalysis = response["analysis"] ?? "Análisis no disponible.";
+
+          if (mounted && premiumPredictions.isNotEmpty) {
+            // NAVIGATE TO PREMIUM RESULT PAGE
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PremiumResultPage(
+                  variety: premiumPredictions.first.variedad,
+                  confidence: premiumPredictions.first.confianza,
+                  photos: List.from(_capturedPhotos),
+                  analysisText: premiumAnalysis,
+                  lat: position?.latitude,
+                  lon: position?.longitude,
+                ),
+              ),
+            );
+            
+            // Reset state so user can perform a new scan when coming back
+            setState(() {
+              _capturedPhotos.clear();
+              _premiumStep = PremiumStep.leafFront;
+              _uiState = 0;
+            });
+            return; // Terminate this method, no need to show bottom drawer
           }
         } else {
           // Regular mode sends only one photo
-          predictions = await api.predictImageBase(photo);
+          final List<PredictionModel> predictions = await api.predictImageBase(photo);
           if (predictions.isNotEmpty) {
             variety = predictions.first.variedad;
             confidence = predictions.first.confianza;

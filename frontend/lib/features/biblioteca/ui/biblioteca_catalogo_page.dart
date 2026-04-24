@@ -143,6 +143,9 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
             'fecha_captura': item['fecha_captura'],
             'latitud': item['latitud'],
             'longitud': item['longitud'],
+            'fotos_premium': item['fotos_premium'],
+            'analisis_ia': item['analisis_ia'],
+            'es_premium': item['es_premium'] ?? false,
             'variedad_original': variedadData,
           };
         }).toList();

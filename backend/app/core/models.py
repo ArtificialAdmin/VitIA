@@ -77,9 +77,13 @@ class Coleccion(Base):
     latitud = Column(Float, nullable=True)
     longitud = Column(Float, nullable=True)
     es_publica = Column(Boolean, default=True)
+    es_premium = Column(Boolean, default=False) # <--- NUEVO: Indica si la captura fue en modo avanzado
 
     id_usuario = Column(Integer, ForeignKey("Usuarios.id_usuario"), nullable=False)
     id_variedad = Column(Integer, ForeignKey("Variedades.id_variedad"), nullable=False)
+    # Soporte Premium
+    fotos_premium = Column(JSONB, nullable=True) # Lista de URLs
+    analisis_ia = Column(Text, nullable=True) # Descripción breve de la IA
 
     propietario = relationship("Usuario", back_populates="coleccion")
     variedad = relationship("Variedad", back_populates="items_coleccion")

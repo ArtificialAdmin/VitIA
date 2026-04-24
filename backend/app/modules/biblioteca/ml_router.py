@@ -77,4 +77,15 @@ async def predict_premium(files: List[UploadFile] = File(...)):
 
     consolidated.sort(key=lambda x: x.confianza, reverse=True)
 
-    return PredictionResponse(predicciones=consolidated)
+    # Añadimos un análisis breve de ejemplo para el modo premium
+    mock_analisis = (
+        "Tras analizar las 4 capturas, se observa una hoja con senos laterales profundos y "
+        "un envés con vellosidad media, características típicas de esta variedad. "
+        "El racimo presenta una compacidad media y bayas de forma esferoide, lo que "
+        "refuerza la identificación con una alta confianza."
+    )
+
+    return {
+        "predicciones": consolidated,
+        "analisis_premium": mock_analisis
+    }

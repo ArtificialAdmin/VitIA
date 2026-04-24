@@ -229,7 +229,9 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
           Positioned.fill(
             child: Container(
               color: Colors.black,
-              child: _buildImagen(_itemActual),
+              child: _itemActual['es_premium'] == true && (_itemActual['fotos_premium'] as List).isNotEmpty
+                  ? _buildCarousel(_itemActual['fotos_premium'])
+                  : _buildImagen(_itemActual),
             ),
           ),
 
@@ -330,13 +332,43 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            _itemActual['nombre'] ?? 'Sin Nombre',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _itemActual['nombre'] ?? 'Sin Nombre',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              if (_itemActual['es_premium'] == true)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.amber.shade700),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.auto_awesome, size: 14, color: Colors.amber.shade900),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "PREMIUM",
+                                        style: TextStyle(
+                                          color: Colors.amber.shade900,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -544,6 +576,48 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                         ),
                       ),
 
+                      // SECCIÓN ANALISIS IA (PREMIUM)
+                      if (_itemActual['analisis_ia'] != null) ...[
+                        const SizedBox(height: 30),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey.shade50.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.blueGrey.shade100),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.insights, color: Colors.blueGrey.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Reporte de Identificación IA",
+                                    style: TextStyle(
+                                      color: Colors.blueGrey.shade900,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _itemActual['analisis_ia'],
+                                style: TextStyle(
+                                  color: Colors.blueGrey.shade800,
+                                  fontSize: 14,
+                                  height: 1.5,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 100), // Padding inferior extra
                     ],
                   ),
@@ -610,6 +684,35 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
             alignment: Alignment.topCenter,
             errorBuilder: (c, e, s) => const Center(
                 child: Icon(Icons.broken_image, color: Colors.white)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCarousel(List<dynamic> fotos) {
+    return Stack(
+      children: [
+        PageView.builder(
+          itemCount: fotos.length,
+          itemBuilder: (context, index) => _buildImagen({'imagen': fotos[index]}),
+        ),
+        Positioned(
+          bottom: 200, // Por encima del sheet inicial
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                "Desliza para ver más capturas",
+                style: TextStyle(color: Colors.white70, fontSize: 10),
+              ),
+            ),
           ),
         ),
       ],

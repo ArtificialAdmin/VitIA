@@ -36,7 +36,7 @@ class BibliotecaService {
     }
   }
 
-  Future<List<PredictionModel>> predictImagePremium(List<XFile> files) async {
+  Future<Map<String, dynamic>> predictImagePremium(List<XFile> files) async {
     try {
       final List<MultipartFile> multipartFiles = [];
       for (var file in files) {
@@ -54,7 +54,12 @@ class BibliotecaService {
 
       final response = await _dio.post('/ia/predict-premium', data: formData);
       final List<dynamic> rawList = response.data['predicciones'];
-      return rawList.map((e) => PredictionModel.fromJson(e)).toList();
+      final String? analisis = response.data['analisis_premium'];
+      
+      return {
+        "predictions": rawList.map((e) => PredictionModel.fromJson(e)).toList(),
+        "analysis": analisis,
+      };
     } catch (e) {
       rethrow;
     }

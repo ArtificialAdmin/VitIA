@@ -15,11 +15,13 @@ class ColeccionService {
     double? lat,
     double? lon,
     bool esPublica = true,
+    List<XFile>? premiumFiles,
+    String? analisisIA,
   }) async {
     try {
       final bytes = await imageFile.readAsBytes();
 
-      FormData formData = FormData.fromMap({
+      final Map<String, dynamic> data = {
         "file": MultipartFile.fromBytes(bytes,
             filename: imageFile.name, contentType: MediaType('image', 'jpeg')),
         "nombre_variedad": nombreVariedad,
@@ -27,7 +29,20 @@ class ColeccionService {
         if (lat != null) "latitud": lat,
         if (lon != null) "longitud": lon,
         "es_publica": esPublica.toString(),
-      });
+        if (analisisIA != null) "analisis_ia": analisisIA,
+      };
+
+      if (premiumFiles != null && premiumFiles.isNotEmpty) {
+        final List<MultipartFile> multipartFiles = [];
+        for (var file in premiumFiles) {
+          final pBytes = await file.readAsBytes();
+          multipartFiles.add(MultipartFile.fromBytes(pBytes,
+              filename: file.name, contentType: MediaType('image', 'jpeg')));
+        }
+        data["premium_files"] = multipartFiles;
+      }
+
+      FormData formData = FormData.fromMap(data);
 
       await _dio.post('/coleccion/', data: formData);
     } catch (e) {
