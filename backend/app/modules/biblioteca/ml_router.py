@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from app.ia.model_loader import model
+from app.ia.model_loader import model, premium_model
 import io
 from PIL import Image
 from typing import List
@@ -42,12 +42,16 @@ async def predict_image(file: UploadFile = File(...)):
 async def predict_premium(files: List[UploadFile] = File(...)):
     """
     Predicción avanzada para usuarios Premium (Múltiples fotos).
-    Combina los resultados de las capturas (Haz, Envés, Racimo, Uva) para una mayor precisión.
+    Combina los resultados de las capturas usando el nuevo motor OIV.
     """
     if not files:
         raise HTTPException(status_code=400, detail="Se requiere al menos una imagen.")
 
-    total_confidences = {}
+    from app.modules.biblioteca.oiv_engine import analizar_imagenes_camara, comparar_variedades
+    import numpy as np
+    import cv2
+
+    lista_imagenes_cv2 = []
 
     for file in files:
         if file.content_type.split("/")[0] != "image":
@@ -55,37 +59,53 @@ async def predict_premium(files: List[UploadFile] = File(...)):
         
         image_bytes = await file.read()
         try:
-            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-            results = model.predict(image, save=False, verbose=False)
-            
-            for r in results:
-                for box in r.boxes:
-                    cls_id = int(box.cls)
-                    conf = float(box.conf)
-                    cls_name = model.names[cls_id]
-                    total_confidences.setdefault(cls_name, []).append(conf)
-        except:
-            continue # Ignorar imágenes corruptas en este modo
+            # Convert to numpy array for cv2
+            img_array = np.frombuffer(image_bytes, np.uint8)
+            img_cv2 = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            if img_cv2 is not None:
+                lista_imagenes_cv2.append(img_cv2)
+        except Exception as e:
+            print(f"Error procesando imagen: {e}")
+            continue
 
-    # Consolidamos los resultados de todas las imágenes
-    # De momento simplemente promediamos todo lo detectado en las N fotos
-    if not total_confidences:
+    if not lista_imagenes_cv2:
         return PredictionResponse(predicciones=[])
 
-    consolidated = [PredictionResult(variedad=cls, confianza=round((sum(confs)/len(confs))*100, 2))
-                    for cls, confs in total_confidences.items()]
+    # Llamar al nuevo motor usando el modelo premium
+    resultados_ia = analizar_imagenes_camara(lista_imagenes_cv2, premium_model)
+    
+    # Comparar con la base de datos local JSON
+    comparacion = comparar_variedades(resultados_ia)
+    
+    if isinstance(comparacion, dict) and "error" in comparacion:
+        raise HTTPException(status_code=500, detail=comparacion["error"])
 
-    consolidated.sort(key=lambda x: x.confianza, reverse=True)
+    # Convertir el resultado a la estructura PredictionResult
+    consolidated = []
+    for c in comparacion:
+        # Solo devolver las que tengan algo de similitud, o podemos devolver top 5
+        consolidated.append(
+            PredictionResult(
+                variedad=c["nombre"], 
+                confianza=c["similitud"]
+            )
+        )
+        
+    # Limitar a las top 5 para no saturar la UI
+    consolidated = consolidated[:5]
 
-    # Añadimos un análisis breve de ejemplo para el modo premium
-    mock_analisis = (
-        "Tras analizar las 4 capturas, se observa una hoja con senos laterales profundos y "
-        "un envés con vellosidad media, características típicas de esta variedad. "
-        "El racimo presenta una compacidad media y bayas de forma esferoide, lo que "
-        "refuerza la identificación con una alta confianza."
+    hojas_dict = resultados_ia.get('hojas') or {}
+    racimos_dict = resultados_ia.get('racimos') or {}
+    bayas_dict = resultados_ia.get('bayas') or {}
+
+    analisis_texto = (
+        f"Se detectaron hojas ({hojas_dict.get('muestras_detectadas', 0)}), "
+        f"racimos ({racimos_dict.get('muestras_detectadas', 0)}) y "
+        f"bayas ({bayas_dict.get('muestras_detectadas', 0)}). "
+        "El análisis morfológico avanzado ha calculado la similitud con base en los descriptores OIV."
     )
 
     return {
         "predicciones": consolidated,
-        "analisis_premium": mock_analisis
+        "analisis_premium": analisis_texto
     }
