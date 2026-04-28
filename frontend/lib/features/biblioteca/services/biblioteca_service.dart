@@ -38,19 +38,18 @@ class BibliotecaService {
 
   Future<Map<String, dynamic>> predictImagePremium(List<XFile> files) async {
     try {
-      final List<MultipartFile> multipartFiles = [];
+      FormData formData = FormData();
       for (var file in files) {
         final bytes = await file.readAsBytes();
-        multipartFiles.add(MultipartFile.fromBytes(
-          bytes,
-          filename: file.name,
-          contentType: MediaType('image', 'jpeg'),
+        formData.files.add(MapEntry(
+          "files",
+          MultipartFile.fromBytes(
+            bytes,
+            filename: file.name,
+            contentType: MediaType('image', 'jpeg'),
+          )
         ));
       }
-
-      FormData formData = FormData.fromMap({
-        "files": multipartFiles,
-      });
 
       final response = await _dio.post('/ia/predict-premium', data: formData);
       final List<dynamic> rawList = response.data['predicciones'];

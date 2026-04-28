@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/core/constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PremiumResultPage extends ConsumerStatefulWidget {
   final String variety;
@@ -70,11 +71,15 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F0A),
+      backgroundColor: Colors.grey[50], // Fondo claro general de la app
       appBar: AppBar(
-        title: const Text('Análisis Premium'),
+        title: const Text(
+          'Análisis Premium',
+          style: TextStyle(color: Colors.black87),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -87,8 +92,8 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                 children: [
                   Text(
                     widget.variety,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: GoogleFonts.lora(
+                      color: Colors.black87,
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
@@ -98,14 +103,14 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.greenAccent.withOpacity(0.2),
+                      color: const Color(0xFFD4AF37).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.greenAccent, width: 1),
+                      border: Border.all(color: const Color(0xFFD4AF37), width: 1),
                     ),
                     child: Text(
                       'Confianza: ${widget.confidence.toStringAsFixed(1)}%',
                       style: const TextStyle(
-                        color: Colors.greenAccent,
+                        color: Color(0xFFD4AF37),
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -131,7 +136,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -145,66 +150,31 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
               padding: EdgeInsets.all(8.0),
               child: Center(
                 child: Text(
-                  'Desliza para ver todas las capturas',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                  'Desliza para revisar las 4 capturas',
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
                 ),
               ),
             ),
 
-            // 3. AI Analysis Section
+            // 3. Cover Selector (MORE PROMINENT)
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Análisis de la IA',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.analysisText,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // 4. Cover Selector
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Selecciona la foto de portada',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                   Row(
+                    children: const [
+                      Icon(Icons.photo_camera, color: Color(0xFFD4AF37), size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Elegir foto de portada',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -222,17 +192,21 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? Colors.greenAccent : Colors.transparent,
-                                width: 3,
+                                color: isSelected
+                                    ? const Color(0xFFD4AF37)
+                                    : Colors.grey[300]!,
+                                width: isSelected ? 3 : 1,
                               ),
                               image: DecorationImage(
-                                image: FileImage(File(widget.photos[index].path)),
+                                image:
+                                    FileImage(File(widget.photos[index].path)),
                                 fit: BoxFit.cover,
                               ),
                             ),
                             child: isSelected
                                 ? const Center(
-                                    child: Icon(Icons.check_circle, color: Colors.greenAccent),
+                                    child: Icon(Icons.check_circle,
+                                        color: Color(0xFFD4AF37)),
                                   )
                                 : null,
                           ),
@@ -244,49 +218,133 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
               ),
             ),
 
+            // 4. AI Analysis Section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Análisis de la IA',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.analysisText,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+
             // 5. Notes
             Padding(
               padding: const EdgeInsets.all(20),
               child: TextField(
                 controller: _notesController,
                 maxLines: 3,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
                   hintText: 'Añadir notas personales...',
-                  hintStyle: const TextStyle(color: Colors.white24),
+                  hintStyle: const TextStyle(color: Colors.black38),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(color: Colors.grey[200]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey[200]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFD4AF37)),
                   ),
                 ),
               ),
             ),
 
-            // 6. Save Button
+            // 6. Action Buttons (Save or Discard)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.greenAccent,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                      )
-                    : const Text(
-                        'Guardar en Colección',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Column(
+                children: [
+                   SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4AF37),
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            )
+                          : const Text(
+                              'Confirmar y Guardar',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _isSaving ? null : () {
+                        // Simple pop acts as discard
+                        Navigator.of(context).pop();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(color: Colors.redAccent),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('Descartar Identificación', 
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

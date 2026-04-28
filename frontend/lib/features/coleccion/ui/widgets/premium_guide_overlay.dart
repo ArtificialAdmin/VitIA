@@ -27,53 +27,6 @@ class PremiumGuideOverlay extends StatelessWidget {
             ),
           ),
         ),
-        
-        // Instructional Label
-        Positioned(
-          top: 160,
-          left: 10,
-          right: 10,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-        
-        // Step indicator (e.g. 1/4)
-        Positioned(
-          top: 130, // Even lower to stay clear of the toggle
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (index) {
-              bool active = index <= step.index;
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: active ? Colors.greenAccent : Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              );
-            }),
-          ),
-        ),
       ],
     );
   }

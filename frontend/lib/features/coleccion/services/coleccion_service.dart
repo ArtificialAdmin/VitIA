@@ -21,28 +21,30 @@ class ColeccionService {
     try {
       final bytes = await imageFile.readAsBytes();
 
-      final Map<String, dynamic> data = {
-        "file": MultipartFile.fromBytes(bytes,
-            filename: imageFile.name, contentType: MediaType('image', 'jpeg')),
-        "nombre_variedad": nombreVariedad,
-        if (notas != null) "notas": notas,
-        if (lat != null) "latitud": lat,
-        if (lon != null) "longitud": lon,
-        "es_publica": esPublica.toString(),
-        if (analisisIA != null) "analisis_ia": analisisIA,
-      };
+      FormData formData = FormData();
+      formData.fields.addAll([
+        MapEntry("nombre_variedad", nombreVariedad),
+        if (notas != null) MapEntry("notas", notas),
+        if (lat != null) MapEntry("latitud", lat.toString()),
+        if (lon != null) MapEntry("longitud", lon.toString()),
+        MapEntry("es_publica", esPublica.toString()),
+        if (analisisIA != null) MapEntry("analisis_ia", analisisIA),
+      ]);
+      
+      formData.files.add(MapEntry(
+        "file",
+        MultipartFile.fromBytes(bytes, filename: imageFile.name, contentType: MediaType('image', 'jpeg'))
+      ));
 
       if (premiumFiles != null && premiumFiles.isNotEmpty) {
-        final List<MultipartFile> multipartFiles = [];
         for (var file in premiumFiles) {
           final pBytes = await file.readAsBytes();
-          multipartFiles.add(MultipartFile.fromBytes(pBytes,
-              filename: file.name, contentType: MediaType('image', 'jpeg')));
+          formData.files.add(MapEntry(
+            "premium_files",
+            MultipartFile.fromBytes(pBytes, filename: file.name, contentType: MediaType('image', 'jpeg'))
+          ));
         }
-        data["premium_files"] = multipartFiles;
       }
-
-      FormData formData = FormData.fromMap(data);
 
       await _dio.post('/coleccion/', data: formData);
     } catch (e) {

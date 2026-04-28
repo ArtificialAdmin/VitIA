@@ -98,12 +98,31 @@ async def predict_premium(files: List[UploadFile] = File(...)):
     racimos_dict = resultados_ia.get('racimos') or {}
     bayas_dict = resultados_ia.get('bayas') or {}
 
-    analisis_texto = (
-        f"Se detectaron hojas ({hojas_dict.get('muestras_detectadas', 0)}), "
-        f"racimos ({racimos_dict.get('muestras_detectadas', 0)}) y "
-        f"bayas ({bayas_dict.get('muestras_detectadas', 0)}). "
-        "El análisis morfológico avanzado ha calculado la similitud con base en los descriptores OIV."
-    )
+    # --- Generación de Reporte Premium Detallado ---
+    detalles = []
+    
+    if hojas_dict and hojas_dict.get('muestras_detectadas', 0) > 0:
+        # Ejemplo: "oiv_067" es la forma de la hoja
+        desc_h = hojas_dict.get('oiv_067', {}).get('descripcion', 'detectada')
+        detalles.append(f"Hojas con morfología {desc_h.lower()}")
+    
+    if racimos_dict and racimos_dict.get('muestras_detectadas', 0) > 0:
+        # Ejemplo: "oiv_204" es la compacidad
+        desc_r = racimos_dict.get('oiv_204', {}).get('descripcion', 'detectada')
+        detalles.append(f"Racimos de compacidad {desc_r.lower()}")
+        
+    if bayas_dict and bayas_dict.get('muestras_detectadas', 0) > 0:
+        # Ejemplo: "oiv_225" es el color
+        desc_b = bayas_dict.get('oiv_225', {}).get('descripcion', 'detectado')
+        # Ejemplo: "oiv_223" es la forma de la baya
+        desc_f = bayas_dict.get('oiv_223', {}).get('descripcion', 'detectada')
+        detalles.append(f"Bayas {desc_b.lower()} de forma {desc_f.lower()}")
+
+    if detalles:
+        analisis_texto = "Análisis morfológico avanzado: " + ", ".join(detalles) + ". "
+        analisis_texto += f"Se han evaluado {resultados_ia.get('hojas', {}).get('muestras_detectadas', 0)} hojas, {resultados_ia.get('racimos', {}).get('muestras_detectadas', 0)} racimos y {resultados_ia.get('bayas', {}).get('muestras_detectadas', 0)} bayas."
+    else:
+        analisis_texto = "El análisis multiespectral no ha podido extraer suficientes descriptores morfológicos claros. Se recomienda repetir las capturas con mejor iluminación."
 
     return {
         "predicciones": consolidated,

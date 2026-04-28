@@ -30,7 +30,7 @@ from app.modules.biblioteca import crud as biblio_crud
 @router.post("/", response_model=schemas.Coleccion, summary="Añadir a colección")
 async def create_item(
     file: UploadFile = File(...),
-    premium_files: Optional[List[UploadFile]] = File(None),
+    premium_files: List[UploadFile] = File(default=[]),
     analisis_ia: Optional[str] = Form(None),
     nombre_variedad: str = Form(...),
     notas: Optional[str] = Form(None),
@@ -43,9 +43,10 @@ async def create_item(
     """Guarda una nueva captura enviada como MultipartForm."""
     try:
         # 1. Subir Imagen Principal (Portada)
+        import io
         file_bytes = await file.read()
         upload_res = imagekit.upload_file(
-            file=file_bytes,
+            file=io.BytesIO(file_bytes),
             file_name=file.filename,
             options=UploadFileRequestOptions(
                 folder="/vitia/colecciones/",
@@ -60,7 +61,7 @@ async def create_item(
             for p_file in premium_files:
                 p_bytes = await p_file.read()
                 p_upload = imagekit.upload_file(
-                    file=p_bytes,
+                    file=io.BytesIO(p_bytes),
                     file_name=p_file.filename,
                     options=UploadFileRequestOptions(
                         folder="/vitia/colecciones/premium/",

@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:vinas_mobile/core/api_client.dart';
 import 'package:vinas_mobile/core/api_config.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 
@@ -28,6 +29,8 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
   late TextEditingController _notasController;
   bool _esPublica = true; // <--- NUEVO ESTADO
   LatLng? _ubicacionActual;
+  int _currentCarouselIndex = 0;
+  final PageController _carouselController = PageController();
   final MapController _mapController = MapController();
 
   @override
@@ -58,6 +61,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
     _notasController.removeListener(_onNotasChanged);
     _notasController.dispose();
     _mapController.dispose();
+    _carouselController.dispose();
     super.dispose();
   }
 
@@ -403,7 +407,75 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                         ],
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 24),
+
+                      // --- MINI CAROUSEL (Inside the white sheet) ---
+                      if (_itemActual['es_premium'] == true &&
+                          (_itemActual['fotos_premium'] as List).isNotEmpty) ...[
+                        _buildSectionTitle("Capturas Detalladas"),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 70,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount:
+                                (_itemActual['fotos_premium'] as List).length,
+                            itemBuilder: (context, index) {
+                              final fotos =
+                                  _itemActual['fotos_premium'] as List;
+                              bool isActive = _currentCarouselIndex == index;
+                              return GestureDetector(
+                                onTap: () {
+                                  _carouselController.animateToPage(
+                                    index,
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  width: 70,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? colorTema
+                                          : Colors.grey.shade200,
+                                      width: isActive ? 2.5 : 1,
+                                    ),
+                                    boxShadow: isActive
+                                        ? [
+                                            BoxShadow(
+                                                color: colorTema.withOpacity(0.2),
+                                                blurRadius: 8)
+                                          ]
+                                        : [],
+                                    image: DecorationImage(
+                                      image: fotos[index]
+                                              .toString()
+                                              .startsWith('http')
+                                          ? NetworkImage(fotos[index])
+                                          : (kIsWeb
+                                              ? NetworkImage(fotos[index])
+                                              : FileImage(File(fotos[index]))
+                                                  as ImageProvider),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  child: isActive
+                                      ? Center(
+                                          child: Icon(Icons.check_circle,
+                                              color: colorTema, size: 20),
+                                        )
+                                      : null,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
 
                       // SECCIÓN NOTAS / DESCRIPCIÓN
                       _buildSectionTitle("Mis Notas"),
@@ -640,29 +712,25 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
 
   Widget _buildImagen(Map<String, dynamic> item) {
     final String? path = item['imagen'];
-    if (path == null)
+    if (path == null) {
       return const Center(
           child: Icon(Icons.image_not_supported, color: Colors.grey, size: 50));
+    }
 
+    // Determine Provider according to platform and path
     ImageProvider imgProvider;
-    bool isLocal = true;
-
-    // Check if it's a URL or local path
-    if (path.startsWith('http')) {
+    if (path.startsWith('http') || kIsWeb) {
       imgProvider = NetworkImage(path);
-      isLocal = false;
     } else if (path.startsWith('assets/')) {
       imgProvider = AssetImage(path);
-      isLocal = false;
     } else {
       imgProvider = FileImage(File(path));
     }
 
-    // STACK: Fondo Blurreer + Imagen Contain (Igual que en BibliotecaVariedadDetallePage)
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. Fondo blurreado
+        // 1. Blurry Background
         Image(
           image: imgProvider,
           fit: BoxFit.cover,
@@ -675,16 +743,26 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
           ),
         ),
 
-        // 2. Imagen nítida
+        // 2. Clear Image (Using direct constructor for better web handling)
         Align(
           alignment: Alignment.topCenter,
-          child: Image(
-            image: imgProvider,
-            fit: BoxFit.contain, // ADJUSTED: Fit contain to see full image
-            alignment: Alignment.topCenter,
-            errorBuilder: (c, e, s) => const Center(
-                child: Icon(Icons.broken_image, color: Colors.white)),
-          ),
+          child: (path.startsWith('http') || kIsWeb)
+              ? Image.network(
+                  path,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (c, e, s) => const Center(
+                    child: Icon(Icons.broken_image, color: Colors.white),
+                  ),
+                )
+              : Image(
+                  image: imgProvider,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (c, e, s) => const Center(
+                    child: Icon(Icons.broken_image, color: Colors.white),
+                  ),
+                ),
         ),
       ],
     );
@@ -694,23 +772,34 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
     return Stack(
       children: [
         PageView.builder(
+          controller: _carouselController,
           itemCount: fotos.length,
-          itemBuilder: (context, index) => _buildImagen({'imagen': fotos[index]}),
+          onPageChanged: (index) =>
+              setState(() => _currentCarouselIndex = index),
+          itemBuilder: (context, index) =>
+              _buildImagen({'imagen': fotos[index]}),
         ),
+
+        // 1. TOP INDICATOR (1 / 4)
         Positioned(
-          bottom: 200, // Por encima del sheet inicial
+          top: 48, // Aligned with the top floating buttons
           left: 0,
           right: 0,
           child: Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.black.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
               ),
-              child: const Text(
-                "Desliza para ver más capturas",
-                style: TextStyle(color: Colors.white70, fontSize: 10),
+              child: Text(
+                "${_currentCarouselIndex + 1} / ${fotos.length}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),

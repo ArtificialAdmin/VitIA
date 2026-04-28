@@ -61,15 +61,15 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   int _uiState = 0;
   bool _isSaving = false;
 
-  List<XFile> _capturedPhotos = [];
-  
-  // Premium / Advanced Mode State
+  final List<XFile> _capturedPhotos = [];
   bool _isAdvancedMode = false;
+  final Map<PremiumStep, List<XFile>> _premiumPhotosMap = {
+    PremiumStep.leafFront: [],
+    PremiumStep.leafBack: [],
+    PremiumStep.cluster: [],
+    PremiumStep.singleGrape: [],
+  };
   PremiumStep _premiumStep = PremiumStep.leafFront;
-  // Temporary storage for photos of the CURRENT premium step
-  final List<XFile> _currentStepPhotos = [];
-  // Final storage for all premium photos
-  final List<XFile> _allPremiumPhotos = [];
 
   // Now we store a LIST of groups
   List<GroupedResult> _results = [];
@@ -196,36 +196,58 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     setState(() {
       _isAdvancedMode = value;
       _premiumStep = PremiumStep.leafFront;
-      _currentStepPhotos.clear();
-      _allPremiumPhotos.clear();
       _capturedPhotos.clear();
+      for (var step in PremiumStep.values) {
+        _premiumPhotosMap[step]!.clear();
+      }
       _uiState = 0;
       if (_sheetController.isAttached) {
-        _sheetController.animateTo(0.15, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        _sheetController.animateTo(0.15,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut);
       }
     });
   }
 
   void _onNextPremiumStep() {
     setState(() {
-      _allPremiumPhotos.addAll(_currentStepPhotos);
-      _currentStepPhotos.clear();
-      
       if (_premiumStep.index < PremiumStep.values.length - 1) {
         _premiumStep = PremiumStep.values[_premiumStep.index + 1];
       } else {
-        // Finished all 4 types
-        _capturedPhotos = List.from(_allPremiumPhotos);
+        // Finished all 4 types -> Collect all and identify
+        _capturedPhotos.clear();
+        for (var step in PremiumStep.values) {
+          _capturedPhotos.addAll(_premiumPhotosMap[step]!);
+        }
+
+        if (_capturedPhotos.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Captura al menos una foto.")));
+          return;
+        }
+
         _identifyPhotos();
       }
     });
   }
 
-  void _removeCurrentStepPhoto(int index) {
+  void _onPreviousPremiumStep() {
+    if (_premiumStep.index > 0) {
+      setState(() {
+        _premiumStep = PremiumStep.values[_premiumStep.index - 1];
+      });
+    }
+  }
+
+  void _discardPremiumCapture() {
     setState(() {
-      _currentStepPhotos.removeAt(index);
+      for (var step in PremiumStep.values) {
+        _premiumPhotosMap[step]!.clear();
+      }
+      _premiumStep = PremiumStep.leafFront;
     });
   }
+
 
   // --- ACTIONS ---
 
@@ -234,14 +256,26 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     try {
       XFile photo;
       if (_useSimulatedCamera) {
-        photo = XFile('simulated_path');
+          // Generar una imagen mínima (1x1 px transparente) válida para que el flujo no se rompa
+          // y los bytes sean reales.
+          final miniJpg = Uint8List.fromList([
+            0xFF, 0xD8, 0xFF, 0xEE, 0x00, 0x0E, 0x41, 0x64, 0x6F, 0x62, 0x65, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xFF, 0xDB, 0x00, 0x43, 0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09, 0x09, 0x08,
+            0x0A, 0x0C, 0x14, 0x0D, 0x0C, 0x0B, 0x0B, 0x0C, 0x19, 0x12, 0x13, 0x0F, 0x14, 0x1D, 0x1A, 0x1F, 0x1E, 0x1D,
+            0x1A, 0x1C, 0x1C, 0x20, 0x24, 0x2E, 0x27, 0x20, 0x22, 0x2C, 0x23, 0x1C, 0x1C, 0x28, 0x37, 0x29, 0x2C, 0x30,
+            0x31, 0x34, 0x34, 0x34, 0x1F, 0x27, 0x39, 0x3D, 0x38, 0x32, 0x3C, 0x2E, 0x33, 0x34, 0x32, 0xFF, 0xC0, 0x00,
+            0x0B, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xFF, 0xC4, 0x00, 0x14, 0x01, 0x01, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xDA, 0x00, 0x08,
+            0x01, 0x01, 0x00, 0x00, 0x3F, 0x00, 0x37, 0xFF, 0xD9
+          ]);
+        photo = XFile.fromData(miniJpg, name: 'simulated_${DateTime.now().millisecondsSinceEpoch}.jpg', mimeType: 'image/jpeg');
       } else {
         photo = await _cameraController!.takePicture();
       }
 
       if (_isAdvancedMode) {
         setState(() {
-          _currentStepPhotos.add(photo);
+          _premiumPhotosMap[_premiumStep]!.add(photo);
           // We NO LONGER auto-advance here. 
           // The user must click "Next Step" or "Finish"
         });
@@ -268,7 +302,11 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       final List<XFile> images = await _picker.pickMultiImage();
       if (images.isNotEmpty) {
         setState(() {
-          _capturedPhotos.addAll(images);
+          if (_isAdvancedMode) {
+            _premiumPhotosMap[_premiumStep]!.addAll(images);
+          } else {
+            _capturedPhotos.addAll(images);
+          }
         });
       }
     } catch (e) {
@@ -279,6 +317,21 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   void _removePhoto(int index) {
     setState(() {
       _capturedPhotos.removeAt(index);
+    });
+  }
+
+  void _removePhotoDynamic(XFile file) {
+    setState(() {
+      if (_isAdvancedMode) {
+        for (var step in PremiumStep.values) {
+          if (_premiumPhotosMap[step]!.contains(file)) {
+            _premiumPhotosMap[step]!.remove(file);
+            break;
+          }
+        }
+      } else if (_capturedPhotos.contains(file)) {
+        _capturedPhotos.remove(file);
+      }
     });
   }
 
@@ -356,8 +409,57 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
       final DateTime now = DateTime.now();
 
-      // 1. Analyze ALL photos
-      // 1. Analyze ALL photos
+      // --- NEW LOGIC: SEPARATE ADVANCED FROM STANDARD ---
+      if (_isAdvancedMode) {
+        final api = ref.read(apiProvider);
+        // Send ALL 4 captured photos to the premium endpoint
+        final response = await api.predictImagePremium(_capturedPhotos);
+        final List<PredictionModel> premiumPredictions =
+            response["predictions"];
+        final String premiumAnalysis =
+            response["analysis"] ?? "Análisis no disponible.";
+
+        if (mounted && premiumPredictions.isNotEmpty) {
+          // NAVIGATE TO PREMIUM RESULT PAGE
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PremiumResultPage(
+                variety: premiumPredictions.first.variedad,
+                confidence: premiumPredictions.first.confianza,
+                photos: List.from(_capturedPhotos),
+                analysisText: premiumAnalysis,
+                lat: position?.latitude,
+                lon: position?.longitude,
+              ),
+            ),
+          );
+
+          // Reset state when coming back
+          if (mounted) {
+            setState(() {
+              _capturedPhotos.clear();
+              for (var step in PremiumStep.values) {
+                _premiumPhotosMap[step]!.clear();
+              }
+              _premiumStep = PremiumStep.leafFront;
+              _uiState = 0;
+            });
+            if (_sheetController.isAttached) {
+              _sheetController.animateTo(0.15,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut);
+            }
+          }
+          return;
+        } else {
+          // Si el modelo devuelve un array vacío significa que no reconoció la uva
+          // ya sea por fotos borrosas, en negro, o sin elementos reconocibles.
+          throw Exception(
+              "No se han detectado hojas o racimos válidos. Asegúrate de que las fotos estén bien iluminadas y vuelve a realizar el análisis.");
+        }
+      }
+
+      // --- STANDARD MODE FLOW ---
       final List<GroupedResult> finalResults = [];
 
       for (var photo in _capturedPhotos) {
@@ -365,44 +467,12 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         double confidence = 0.0;
 
         final api = ref.read(apiProvider);
-        final List<PredictionModel> predictions;
-
-        if (_isAdvancedMode) {
-          // Send ALL captured photos to the premium endpoint
-          final response = await api.predictImagePremium(_capturedPhotos);
-          final List<PredictionModel> premiumPredictions = response["predictions"];
-          final String premiumAnalysis = response["analysis"] ?? "Análisis no disponible.";
-
-          if (mounted && premiumPredictions.isNotEmpty) {
-            // NAVIGATE TO PREMIUM RESULT PAGE
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => PremiumResultPage(
-                  variety: premiumPredictions.first.variedad,
-                  confidence: premiumPredictions.first.confianza,
-                  photos: List.from(_capturedPhotos),
-                  analysisText: premiumAnalysis,
-                  lat: position?.latitude,
-                  lon: position?.longitude,
-                ),
-              ),
-            );
-            
-            // Reset state so user can perform a new scan when coming back
-            setState(() {
-              _capturedPhotos.clear();
-              _premiumStep = PremiumStep.leafFront;
-              _uiState = 0;
-            });
-            return; // Terminate this method, no need to show bottom drawer
-          }
-        } else {
-          // Regular mode sends only one photo
-          final List<PredictionModel> predictions = await api.predictImageBase(photo);
-          if (predictions.isNotEmpty) {
-            variety = predictions.first.variedad;
-            confidence = predictions.first.confianza;
-          }
+        
+        // Regular mode sends only one photo
+        final List<PredictionModel> predictions = await api.predictImageBase(photo);
+        if (predictions.isNotEmpty) {
+          variety = predictions.first.variedad;
+          confidence = predictions.first.confianza;
         }
 
         // Create individual result for each photo
@@ -448,8 +518,12 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     } catch (e) {
       if (mounted) {
         setState(() => _uiState = 0);
+        String errorMessage = e.toString();
+        if (errorMessage.startsWith("Exception: ")) {
+          errorMessage = errorMessage.substring(11); // Removes "Exception: "
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     }
@@ -549,8 +623,9 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       _results.clear();
       _currentResultIndex = 0;
       _premiumStep = PremiumStep.leafFront;
-      _currentStepPhotos.clear();
-      _allPremiumPhotos.clear();
+      for (var step in PremiumStep.values) {
+        _premiumPhotosMap[step]!.clear();
+      }
     });
     // Animate back to initial capture size
     if (_sheetController.isAttached) {
@@ -620,7 +695,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
   Widget _buildControlDock() {
     return Container(
-      padding: const EdgeInsets.only(top: 16, bottom: 32),
+      padding: const EdgeInsets.only(top: 12, bottom: 16),
       decoration: const BoxDecoration(
         color: Color(0xFF0A0F0A), // Very dark solid dock
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -628,31 +703,62 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. Review Gallery (Thumbnails)
-          if (_isAdvancedMode && _currentStepPhotos.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildPhotoReviewGallery(),
-            ),
-
-          // 2. Counter and Next Button (NOW ABOVE TRIGGER)
+          // 1. INSTRUCTIONS & PROGRESS (The "Green" part, now in the dock)
           if (_isAdvancedMode)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
                 children: [
-                  _buildPhotoCounter(),
-                  if (_currentStepPhotos.isNotEmpty) _buildNextStepButton(),
+                  Text(
+                    _getPremiumLabel(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(4, (index) {
+                      bool active = index <= _premiumStep.index;
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: active ? Colors.greenAccent : Colors.white12,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
                 ],
               ),
             ),
 
-          if (_isAdvancedMode) const SizedBox(height: 12),
+          const SizedBox(height: 12),
+
+          // 2. Navigation & Photo Counter
+          if (_isAdvancedMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildPhotoCounter(),
+                  _buildAdvancedControls(),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 12),
 
           // 3. Main Controls (Flash, Trigger, Switch)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -667,13 +773,13 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
               ],
             ),
           ),
-
-          // EXTRA SPACE to ensure buttons are above the bottom sheet handle
-          const SizedBox(height: 80),
+          // SPACE to ensure buttons are above the bottom sheet handle
+          const SizedBox(height: 120),
         ],
       ),
     );
   }
+
 
   // Refactored helper widgets for the new Dock
   Widget _currentFlashModeIcon() {
@@ -791,26 +897,94 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     );
   }
 
-  Widget _buildNextStepButton() {
+  bool _canProceed() {
+    if (_premiumPhotosMap[_premiumStep]!.isEmpty) return false;
     bool isLast = _premiumStep == PremiumStep.singleGrape;
-    return ElevatedButton.icon(
-      onPressed: _onNextPremiumStep,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFD4AF37),
-        foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        elevation: 10,
-      ),
-      icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward),
-      label: Text(
-        isLast ? "Finalizar" : "Siguiente Fase",
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+    if (isLast) {
+      for (var step in PremiumStep.values) {
+        if (_premiumPhotosMap[step]!.isEmpty) return false;
+      }
+    }
+    return true;
+  }
+
+  Widget _buildAdvancedControls() {
+    bool isFirst = _premiumStep == PremiumStep.leafFront;
+    bool isLast = _premiumStep == PremiumStep.singleGrape;
+    bool canProceed = _canProceed();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (!isFirst) ...[
+          ElevatedButton(
+            onPressed: _onPreviousPremiumStep,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black45,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(50, 44),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  side: const BorderSide(color: Colors.white24)),
+              elevation: 0,
+            ),
+            child: const Icon(Icons.arrow_back, size: 20),
+          ),
+          const SizedBox(width: 8),
+        ],
+        ElevatedButton.icon(
+          onPressed: canProceed ? _onNextPremiumStep : () {
+               if (isLast && _premiumPhotosMap[_premiumStep]!.isNotEmpty) {
+                  List<String> missingPhases = [];
+                  for (var step in PremiumStep.values) {
+                    if (_premiumPhotosMap[step]!.isEmpty) {
+                      missingPhases.add(_getStepTitle(step));
+                    }
+                  }
+                  String missingParts = missingPhases.join(", ");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Faltan fotos en: $missingParts", style: const TextStyle(color: Colors.white)), 
+                      backgroundColor: Colors.redAccent,
+                      duration: const Duration(seconds: 4),
+                    )
+                  );
+               }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: canProceed 
+                ? const Color(0xFFD4AF37) 
+                : Colors.grey.withOpacity(0.3),
+            foregroundColor: canProceed 
+                ? Colors.black 
+                : Colors.white24,
+            minimumSize: const Size(50, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            elevation: canProceed ? 10 : 0,
+          ),
+          icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward, size: 20),
+          label: Text(
+            isLast ? "Finalizar" : "", 
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPhotoCounter() {
+    int totalCount = 0;
+    if (_isAdvancedMode) {
+      for (var list in _premiumPhotosMap.values) {
+        totalCount += list.length;
+      }
+    } else {
+      totalCount = _capturedPhotos.length;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -821,61 +995,19 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+          const Icon(Icons.photo_library_outlined,
+              color: Colors.white, size: 18),
           const SizedBox(width: 8),
           Text(
-            "${_currentStepPhotos.length} fotos",
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            "$totalCount fotos",
+            style:
+                const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPhotoReviewGallery() {
-    return Container(
-      height: 90,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _currentStepPhotos.length,
-        itemBuilder: (context, index) {
-          final photo = _currentStepPhotos[index];
-          return Container(
-            margin: const EdgeInsets.only(right: 12),
-            width: 70,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white, width: 2),
-              image: DecorationImage(
-                image: photo.path == 'simulated_path' 
-                   ? const NetworkImage('https://images.unsplash.com/photo-1596244956306-a9df17907407?auto=format&fit=crop&w=200') as ImageProvider
-                   : FileImage(File(photo.path)),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: IconButton(
-                    iconSize: 20,
-                    icon: const CircleAvatar(
-                      backgroundColor: Colors.red,
-                      radius: 10,
-                      child: Icon(Icons.close, size: 14, color: Colors.white),
-                    ),
-                    onPressed: () => _removeCurrentStepPhoto(index),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   String _getPremiumLabel() {
     switch (_premiumStep) {
@@ -965,8 +1097,191 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         return _buildCaptureState();
     }
   }
-
   Widget _buildCaptureState() {
+    if (_isAdvancedMode) {
+      final stepPhotos = _premiumPhotosMap[_premiumStep]!;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            "Capturas de la fase",
+            style: GoogleFonts.lora(
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Revisa las fotos de la fase actual antes de continuar",
+            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+
+          // CURRENT STEP ONLY
+          Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _getStepIcon(_premiumStep),
+                        size: 14,
+                        color: const Color(0xFFD4AF37),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _getStepTitle(_premiumStep),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "${stepPhotos.length} fotos",
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.add_photo_alternate, color: Color(0xFFD4AF37), size: 22),
+                      tooltip: "Añadir desde galería",
+                      onPressed: _pickFromGallery,
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                if (stepPhotos.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.camera_alt_outlined,
+                              size: 40, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Aún no hay fotos en esta fase",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: stepPhotos.length,
+                      itemBuilder: (context, idx) {
+                        final file = stepPhotos[idx];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: Colors.grey[100],
+                                  child: kIsWeb
+                                      ? Image.network(file.path,
+                                          fit: BoxFit.cover)
+                                      : Image.file(File(file.path),
+                                          fit: BoxFit.cover),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () => _removePhotoFromStep(_premiumStep, idx),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 4)
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(4),
+                                    child: const Icon(Icons.close,
+                                        size: 12, color: Colors.black),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          Builder(
+            builder: (context) {
+               int totalPhotos = 0;
+               for (var list in _premiumPhotosMap.values) {
+                 totalPhotos += list.length;
+               }
+               if (totalPhotos > 0) {
+                 return SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: _discardPremiumCapture,
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      label: const Text("DESCARTAR IDENTIFICACIÓN",
+                          style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  );
+               }
+               return const SizedBox();
+            }
+          ),
+          const SizedBox(height: 100),
+        ],
+      );
+    }
+
+    // MODO RÁPIDO (Original)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1000,13 +1315,12 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                       top: 8,
                       right: 8,
                       child: GestureDetector(
-                        onTap: () =>
-                            _removePhoto(_capturedPhotos.indexOf(file)),
-                        child: const CircleAvatar(
-                          backgroundColor: Colors.white,
+                        onTap: () => _removePhotoDynamic(file),
+                        child: CircleAvatar(
+                          backgroundColor: Colors.white.withOpacity(0.9),
                           radius: 12,
-                          child:
-                              Icon(Icons.close, size: 14, color: Colors.black),
+                          child: const Icon(Icons.close,
+                              size: 14, color: Colors.black),
                         ),
                       ),
                     ),
@@ -1045,6 +1359,39 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         const SizedBox(height: 80),
       ],
     );
+  }
+
+  // Helpers for grouped gallery
+  IconData _getStepIcon(PremiumStep step) {
+    switch (step) {
+      case PremiumStep.leafFront:
+        return Icons.eco;
+      case PremiumStep.leafBack:
+        return Icons.eco_outlined;
+      case PremiumStep.cluster:
+        return Icons.grain;
+      case PremiumStep.singleGrape:
+        return Icons.fiber_manual_record;
+    }
+  }
+
+  String _getStepTitle(PremiumStep step) {
+    switch (step) {
+      case PremiumStep.leafFront:
+        return "Haz de la hoja";
+      case PremiumStep.leafBack:
+        return "Envés de la hoja";
+      case PremiumStep.cluster:
+        return "Racimo completo";
+      case PremiumStep.singleGrape:
+        return "Detalle de uva";
+    }
+  }
+
+  void _removePhotoFromStep(PremiumStep step, int index) {
+    setState(() {
+      _premiumPhotosMap[step]!.removeAt(index);
+    });
   }
 
   Widget _buildLoadingState() {
