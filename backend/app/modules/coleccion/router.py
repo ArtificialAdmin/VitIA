@@ -47,10 +47,10 @@ async def create_item(
         premium_files = form_data.getlist("premium_files")
 
         # 1. Subir Imagen Principal (Portada)
-        import io
         file_bytes = await file.read()
+        file_base64 = base64.b64encode(file_bytes).decode("utf-8")
         upload_res = imagekit.upload_file(
-            file=io.BytesIO(file_bytes),
+            file=file_base64,
             file_name=file.filename,
             options=UploadFileRequestOptions(
                 folder="/vitia/colecciones/",
@@ -67,8 +67,9 @@ async def create_item(
                 if hasattr(p_file, "read"):
                     p_bytes = await p_file.read()
                     if p_bytes:
+                        p_base64 = base64.b64encode(p_bytes).decode("utf-8")
                         p_upload = imagekit.upload_file(
-                            file=io.BytesIO(p_bytes),
+                            file=p_base64,
                             file_name=p_file.filename,
                             options=UploadFileRequestOptions(
                                 folder="/vitia/colecciones/premium/",

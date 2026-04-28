@@ -711,7 +711,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
   }
 
   Widget _buildImagen(Map<String, dynamic> item) {
-    final String? path = item['imagen'];
+    final String? path = item['imagen'] ?? item['path_foto_usuario'];
     if (path == null) {
       return const Center(
           child: Icon(Icons.image_not_supported, color: Colors.grey, size: 50));

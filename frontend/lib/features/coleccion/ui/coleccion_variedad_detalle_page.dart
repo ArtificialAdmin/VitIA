@@ -370,7 +370,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                 children: [
                   ClipRRect(
                     borderRadius: isHorizontal ? const BorderRadius.vertical(top: Radius.circular(15)) : BorderRadius.circular(15),
-                    child: _buildImage(item['imagen']),
+                    child: _buildImage(item['imagen'] ?? item['path_foto_usuario']),
                   ),
                   Positioned(
                       top: 8,
@@ -385,11 +385,11 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                               child: const Icon(Icons.auto_awesome, size: 16, color: Colors.amber),
                             ),
                           GestureDetector(
-                            onTap: () => _setAsCover(item['imagen']),
+                            onTap: () => _setAsCover(item['imagen'] ?? item['path_foto_usuario']),
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
-                              child: Icon(_customCoverPath == item['imagen'] ? Icons.star : Icons.star_border, size: 20, color: Colors.orange),
+                              child: Icon(_customCoverPath == (item['imagen'] ?? item['path_foto_usuario']) ? Icons.star : Icons.star_border, size: 20, color: Colors.orange),
                             ),
                           ),
                         ],
