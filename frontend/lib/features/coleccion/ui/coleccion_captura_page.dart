@@ -281,6 +281,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         });
       } else {
         setState(() {
+          _capturedPhotos.clear(); // Ensure only 1 photo in basic mode
           _capturedPhotos.add(photo);
         });
         // Expand sheet to show the captured photo
@@ -305,7 +306,8 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
           if (_isAdvancedMode) {
             _premiumPhotosMap[_premiumStep]!.addAll(images);
           } else {
-            _capturedPhotos.addAll(images);
+            _capturedPhotos.clear(); // Ensure only 1 photo in basic mode
+            _capturedPhotos.add(images.first);
           }
         });
       }
