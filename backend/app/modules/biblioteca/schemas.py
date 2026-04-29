@@ -44,6 +44,7 @@ class PredictionResult(BaseModel):
     """Resultado individual de una predicción de IA."""
     variedad: str
     confianza: float
+    color: Optional[str] = None
 
 class PredictionResponse(BaseModel):
     """Respuesta completa del servicio de IA."""

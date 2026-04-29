@@ -11,6 +11,8 @@ class PremiumResultPage extends ConsumerStatefulWidget {
   final double confidence;
   final List<XFile> photos;
   final String analysisText;
+  final bool hasMissingPhases;
+  final String? color;
   final double? lat;
   final double? lon;
 
@@ -20,6 +22,8 @@ class PremiumResultPage extends ConsumerStatefulWidget {
     required this.confidence,
     required this.photos,
     required this.analysisText,
+    this.hasMissingPhases = false,
+    this.color,
     this.lat,
     this.lon,
   });
@@ -55,7 +59,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(); // Go back to capture or home
+        Navigator.of(context).pop(true); // Retornar true indicando que se guardó
       }
     } catch (e) {
       if (mounted) {
@@ -99,23 +103,29 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFD4AF37), width: 1),
-                    ),
-                    child: Text(
-                      'Confianza: ${widget.confidence.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        color: Color(0xFFD4AF37),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                  const SizedBox(height: 8),
+                  Builder(builder: (context) {
+                    final bool isBlanca = widget.color?.toLowerCase() == 'blanca';
+                    final Color badgeColor = isBlanca
+                        ? const Color(0xFF8B8000)
+                        : const Color(0xFF800020);
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: badgeColor.withOpacity(0.3)),
                       ),
-                    ),
-                  ),
+                      child: Text(
+                        'Confianza: ${widget.confidence.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          color: badgeColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -261,6 +271,30 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                         height: 1.5,
                       ),
                     ),
+                    if (widget.hasMissingPhases) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: Colors.orange.shade600, size: 20),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                "La falta de imágenes en alguna fase puede afectar al análisis correcto de la variedad.",
+                                style: TextStyle(color: Colors.deepOrange, fontSize: 13, height: 1.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

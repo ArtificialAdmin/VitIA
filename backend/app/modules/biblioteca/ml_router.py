@@ -87,7 +87,8 @@ async def predict_premium(files: List[UploadFile] = File(...)):
         consolidated.append(
             PredictionResult(
                 variedad=c["nombre"], 
-                confianza=c["similitud"]
+                confianza=c["similitud"],
+                color=c.get("color")
             )
         )
         

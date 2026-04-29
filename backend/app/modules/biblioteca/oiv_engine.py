@@ -320,10 +320,15 @@ def comparar_variedades(resultados_ia, ruta_json=None):
         # 4. Calcular porcentaje
         if descriptores_evaluados > 0:
             porcentaje_similitud = puntuacion_total / descriptores_evaluados
+            # Inferencia de color desde OIV 225 (Antocianos)
+            oiv_225 = oiv_reales.get("225")
+            color_inferido = "Blanca" if oiv_225 == 1 else "Tinta"
+
             resultados_comparacion.append({
                 "nombre": variedad["nombre"],
                 "similitud": round(porcentaje_similitud, 1),
-                "descriptores_usados": descriptores_evaluados
+                "descriptores_usados": descriptores_evaluados,
+                "color": color_inferido
             })
         
     # Ordenar de mayor a menor similitud

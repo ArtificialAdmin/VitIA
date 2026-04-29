@@ -84,7 +84,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
   // Controllers map: Index in _results -> TextEditingController
   final String _fallbackImage =
-      'https://images.unsplash.com/photo-1596244956306-a9df17907407?q=80&w=1974&auto=format&fit=crop';
+      'https://images.unsplash.com/photo-1504221507732-5246c045949b?q=80&w=1000&auto=format&fit=crop';
 
   @override
   void initState() {
@@ -222,7 +222,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
         if (_capturedPhotos.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Captura al menos una foto.")));
+              const SnackBar(content: Text("Captura al menos una foto en total.")));
           return;
         }
 
@@ -287,7 +287,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         // Expand sheet to show the captured photo
         if (_sheetController.isAttached) {
           _sheetController.animateTo(
-            0.5,
+            0.7,
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeInOut,
           );
@@ -345,6 +345,14 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       _results.clear();
       _currentResultIndex = 0;
     });
+
+    if (_sheetController.isAttached) {
+      _sheetController.animateTo(
+        0.7,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
 
     try {
       // Get Context Data
@@ -413,6 +421,11 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
       // --- NEW LOGIC: SEPARATE ADVANCED FROM STANDARD ---
       if (_isAdvancedMode) {
+        bool hasMissing = false;
+        for (var step in PremiumStep.values) {
+          if (_premiumPhotosMap[step]!.isEmpty) hasMissing = true;
+        }
+
         final api = ref.read(apiProvider);
         // Send ALL 4 captured photos to the premium endpoint
         final response = await api.predictImagePremium(_capturedPhotos);
@@ -423,13 +436,15 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
         if (mounted && premiumPredictions.isNotEmpty) {
           // NAVIGATE TO PREMIUM RESULT PAGE
-          await Navigator.of(context).push(
+          final bool? saved = await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => PremiumResultPage(
                 variety: premiumPredictions.first.variedad,
                 confidence: premiumPredictions.first.confianza,
+                color: premiumPredictions.first.color,
                 photos: List.from(_capturedPhotos),
                 analysisText: premiumAnalysis,
+                hasMissingPhases: hasMissing,
                 lat: position?.latitude,
                 lon: position?.longitude,
               ),
@@ -454,10 +469,18 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
           }
           return;
         } else {
-          // Si el modelo devuelve un array vacío significa que no reconoció la uva
-          // ya sea por fotos borrosas, en negro, o sin elementos reconocibles.
-          throw Exception(
-              "No se han detectado hojas o racimos válidos. Asegúrate de que las fotos estén bien iluminadas y vuelve a realizar el análisis.");
+          // No se detectó nada válido en las fotos
+          if (mounted) {
+            setState(() => _uiState = 0);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("🔍 No hemos detectado una vid clara en estas fotos. Intenta acercarte más o mejorar la iluminación."),
+                backgroundColor: Colors.orangeAccent,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+          return;
         }
       }
 
@@ -746,7 +769,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
           // 2. Navigation & Photo Counter
           if (_isAdvancedMode)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -899,21 +922,17 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     );
   }
 
-  bool _canProceed() {
-    if (_premiumPhotosMap[_premiumStep]!.isEmpty) return false;
-    bool isLast = _premiumStep == PremiumStep.singleGrape;
-    if (isLast) {
-      for (var step in PremiumStep.values) {
-        if (_premiumPhotosMap[step]!.isEmpty) return false;
-      }
-    }
-    return true;
-  }
+  // _canProceed removed, logic integrated into _buildAdvancedControls
 
   Widget _buildAdvancedControls() {
     bool isFirst = _premiumStep == PremiumStep.leafFront;
     bool isLast = _premiumStep == PremiumStep.singleGrape;
-    bool canProceed = _canProceed();
+    
+    int totalPhotos = 0;
+    for (var list in _premiumPhotosMap.values) {
+      totalPhotos += list.length;
+    }
+    bool canProceed = !isLast || totalPhotos > 0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -924,7 +943,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black45,
               foregroundColor: Colors.white,
-              minimumSize: const Size(50, 44),
+              minimumSize: const Size(44, 44),
               padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
@@ -933,46 +952,43 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             ),
             child: const Icon(Icons.arrow_back, size: 20),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
-        ElevatedButton.icon(
-          onPressed: canProceed ? _onNextPremiumStep : () {
-               if (isLast && _premiumPhotosMap[_premiumStep]!.isNotEmpty) {
-                  List<String> missingPhases = [];
-                  for (var step in PremiumStep.values) {
-                    if (_premiumPhotosMap[step]!.isEmpty) {
-                      missingPhases.add(_getStepTitle(step));
-                    }
-                  }
-                  String missingParts = missingPhases.join(", ");
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Faltan fotos en: $missingParts", style: const TextStyle(color: Colors.white)), 
-                      backgroundColor: Colors.redAccent,
-                      duration: const Duration(seconds: 4),
-                    )
-                  );
-               }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: canProceed 
-                ? const Color(0xFFD4AF37) 
-                : Colors.grey.withOpacity(0.3),
-            foregroundColor: canProceed 
-                ? Colors.black 
-                : Colors.white24,
-            minimumSize: const Size(50, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            elevation: canProceed ? 10 : 0,
+        if (isLast)
+          ElevatedButton.icon(
+            onPressed: canProceed ? _onNextPremiumStep : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: canProceed 
+                  ? const Color(0xFFD4AF37) 
+                  : Colors.grey.withOpacity(0.3),
+              foregroundColor: canProceed 
+                  ? Colors.black 
+                  : Colors.white24,
+              minimumSize: const Size(50, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              elevation: canProceed ? 10 : 0,
+            ),
+            icon: const Icon(Icons.check_circle, size: 20),
+            label: const Text("Finalizar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          )
+        else
+          ElevatedButton(
+            onPressed: canProceed ? _onNextPremiumStep : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: canProceed 
+                  ? const Color(0xFFD4AF37) 
+                  : Colors.grey.withOpacity(0.3),
+              foregroundColor: canProceed 
+                  ? Colors.black 
+                  : Colors.white24,
+              minimumSize: const Size(44, 44),
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              elevation: canProceed ? 10 : 0,
+            ),
+            child: const Icon(Icons.arrow_forward, size: 20),
           ),
-          icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward, size: 20),
-          label: Text(
-            isLast ? "Finalizar" : "", 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-        ),
       ],
     );
   }
@@ -987,26 +1003,52 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
       totalCount = _capturedPhotos.length;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.photo_library_outlined,
-              color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            "$totalCount fotos",
-            style:
-                const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _pickFromGallery,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: const Icon(Icons.add_photo_alternate, color: Colors.white, size: 20),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: () {
+            if (totalCount > 0 && _sheetController.isAttached) {
+              _sheetController.animateTo(
+                0.7,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  "$totalCount fotos",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1028,7 +1070,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
 
   Widget _buildDraggableSheet() {
     double minSize = 0.15;
-    double maxSize = 0.85;
+    double maxSize = 0.9;
     double initialSize = 0.15;
 
     // Check UI State for initial sizing logic (only for reset/init)
@@ -1101,13 +1143,16 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
   Widget _buildCaptureState() {
     if (_isAdvancedMode) {
-      final stepPhotos = _premiumPhotosMap[_premiumStep]!;
+      int totalPhotos = 0;
+      for (var list in _premiumPhotosMap.values) {
+        totalPhotos += list.length;
+      }
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            "Capturas de la fase",
+            "Capturas de la vid",
             style: GoogleFonts.lora(
               fontSize: 24,
               fontWeight: FontWeight.w400,
@@ -1116,168 +1161,120 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
           ),
           const SizedBox(height: 8),
           Text(
-            "Revisa las fotos de la fase actual antes de continuar",
+            "Revisa las fotos tomadas en todas las fases",
             style: TextStyle(color: Colors.grey[600], fontSize: 13),
           ),
           const SizedBox(height: 24),
 
-          // CURRENT STEP ONLY
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          if (totalPhotos == 0)
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Center(
+                child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _getStepIcon(_premiumStep),
-                        size: 14,
-                        color: const Color(0xFFD4AF37),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _getStepTitle(_premiumStep),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "${stepPhotos.length} fotos",
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      icon: const Icon(Icons.add_photo_alternate, color: Color(0xFFD4AF37), size: 22),
-                      tooltip: "Añadir desde galería",
-                      onPressed: _pickFromGallery,
-                      constraints: const BoxConstraints(),
-                      padding: EdgeInsets.zero,
+                    Icon(Icons.camera_alt_outlined, size: 40, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Aún no hay fotos capturadas",
+                      style: TextStyle(color: Colors.grey),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                
-                if (stepPhotos.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.camera_alt_outlined,
-                              size: 40, color: Colors.grey[300]),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "Aún no hay fotos en esta fase",
-                            style: TextStyle(color: Colors.grey),
+              ),
+            )
+          else ...[
+            ...PremiumStep.values.map((step) {
+              final stepPhotos = _premiumPhotosMap[step]!;
+              if (stepPhotos.isEmpty) return const SizedBox();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2E3B2E), // Dark green
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ],
-                      ),
+                          child: Text(
+                            "Fase ${step.index + 1}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          "${stepPhotos.length} fotos",
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      ],
                     ),
-                  )
-                else
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: stepPhotos.length,
-                      itemBuilder: (context, idx) {
-                        final file = stepPhotos[idx];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.grey[100],
-                                  child: kIsWeb
-                                      ? Image.network(file.path,
-                                          fit: BoxFit.cover)
-                                      : Image.file(File(file.path),
-                                          fit: BoxFit.cover),
-                                ),
-                              ),
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: GestureDetector(
-                                  onTap: () => _removePhotoFromStep(_premiumStep, idx),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: stepPhotos.length,
+                        itemBuilder: (context, idx) {
+                          final file = stepPhotos[idx];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
                                   child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 4)
-                                      ],
-                                    ),
-                                    padding: const EdgeInsets.all(4),
-                                    child: const Icon(Icons.close,
-                                        size: 12, color: Colors.black),
+                                    width: 100,
+                                    height: 100,
+                                    color: Colors.grey[100],
+                                    child: kIsWeb
+                                        ? Image.network(file.path, fit: BoxFit.cover)
+                                        : Image.file(File(file.path), fit: BoxFit.cover),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
 
-          const SizedBox(height: 24),
-          Builder(
-            builder: (context) {
-               int totalPhotos = 0;
-               for (var list in _premiumPhotosMap.values) {
-                 totalPhotos += list.length;
-               }
-               if (totalPhotos > 0) {
-                 return SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: _discardPremiumCapture,
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                      label: const Text("DESCARTAR IDENTIFICACIÓN",
-                          style: TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.redAccent, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  );
-               }
-               return const SizedBox();
-            }
-          ),
+                  ],
+                ),
+              );
+            }),
+
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: _discardPremiumCapture,
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                label: const Text("DESCARTAR IDENTIFICACIÓN",
+                    style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 100),
         ],
       );
