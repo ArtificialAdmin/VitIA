@@ -452,61 +452,59 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
         }
 
         final api = ref.read(apiProvider);
-        // Send ALL 4 captured photos to the premium endpoint
-        final response = await api.predictImagePremium(_capturedPhotos);
-        final List<PredictionModel> premiumPredictions =
-            response["predictions"];
-        final String premiumAnalysis =
-            response["analysis"] ?? "Análisis no disponible.";
+        try {
+          final response = await api.predictImagePremium(_capturedPhotos);
+          final List<PredictionModel> premiumPredictions =
+              response["predictions"];
+          final String premiumAnalysis =
+              response["analysis"] ?? "Análisis no disponible.";
 
-        if (mounted && premiumPredictions.isNotEmpty) {
-          // NAVIGATE TO PREMIUM RESULT PAGE
-          final bool? saved = await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => PremiumResultPage(
-                variety: premiumPredictions.first.variedad,
-                confidence: premiumPredictions.first.confianza,
-                color: premiumPredictions.first.color,
-                photos: List.from(_capturedPhotos),
-                analysisText: premiumAnalysis,
-                hasMissingPhases: hasMissing,
-                lat: position?.latitude,
-                lon: position?.longitude,
+          if (mounted && premiumPredictions.isNotEmpty) {
+            // NAVIGATE TO PREMIUM RESULT PAGE
+            final bool? saved = await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PremiumResultPage(
+                  variety: premiumPredictions.first.variedad,
+                  confidence: premiumPredictions.first.confianza,
+                  color: premiumPredictions.first.color,
+                  photos: List.from(_capturedPhotos),
+                  analysisText: premiumAnalysis,
+                  hasMissingPhases: hasMissing,
+                  lat: position?.latitude,
+                  lon: position?.longitude,
+                ),
               ),
-            ),
-          );
+            );
 
-          // Reset state when coming back
-          if (mounted) {
-            setState(() {
-              _capturedPhotos.clear();
-              for (var step in PremiumStep.values) {
-                _premiumPhotosMap[step]!.clear();
-              }
-              _premiumStep = PremiumStep.leafFront;
-              _uiState = 0;
-            });
-            if (_sheetController.isAttached) {
-              _sheetController.animateTo(0.15,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut);
+            // Reset state when coming back
+            if (mounted && saved == true) {
+              _doDiscardPremiumCapture();
             }
-          }
-          return;
-        } else {
-          // No se detectó nada válido en las fotos
-          if (mounted) {
-            setState(() => _uiState = 0);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("🔍 No hemos detectado una vid clara en estas fotos. Intenta acercarte más o mejorar la iluminación."),
-                backgroundColor: Colors.orangeAccent,
-                duration: Duration(seconds: 4),
+          } else if (mounted) {
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(premiumAnalysis),
+                backgroundColor: Colors.orange,
               ),
             );
           }
-          return;
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error en el servidor: $e'),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
         }
+        setState(() => _uiState = 0);
+        if (_sheetController.isAttached) {
+          _sheetController.animateTo(0.15,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut);
+        }
+        return;
       }
 
       // --- STANDARD MODE FLOW ---

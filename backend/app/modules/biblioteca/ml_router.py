@@ -121,7 +121,7 @@ async def predict_premium(files: List[UploadFile] = File(...)):
 
     if detalles:
         analisis_texto = "Análisis morfológico avanzado: " + ", ".join(detalles) + ". "
-        analisis_texto += f"Se han evaluado {resultados_ia.get('hojas', {}).get('muestras_detectadas', 0)} hojas, {resultados_ia.get('racimos', {}).get('muestras_detectadas', 0)} racimos y {resultados_ia.get('bayas', {}).get('muestras_detectadas', 0)} bayas."
+        analisis_texto += f"Se han evaluado {(resultados_ia.get('hojas') or {}).get('muestras_detectadas', 0)} hojas, {(resultados_ia.get('racimos') or {}).get('muestras_detectadas', 0)} racimos y {(resultados_ia.get('bayas') or {}).get('muestras_detectadas', 0)} bayas."
     else:
         analisis_texto = "El análisis multiespectral no ha podido extraer suficientes descriptores morfológicos claros. Se recomienda repetir las capturas con mejor iluminación."
 
