@@ -304,7 +304,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
   Widget _buildVarietyCard(Map<String, dynamic> variedad) {
     final int idVar = variedad['id'] ?? variedad['id_variedad'];
     final bool esFav = _favoritosIds.contains(idVar);
-    final bool isBlanca = variedad['tipo'] == 'Blanca';
+    final String? tipo = variedad['tipo'] ?? variedad['color'];
+    final bool isBlanca = tipo?.toLowerCase() == 'blanca';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -363,7 +364,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                       ),
                       const SizedBox(height: 12),
                       // Pill de Tipo
-                      _buildColorBadge(variedad['tipo']),
+                      _buildColorBadge(tipo),
                     ],
                   ),
                 ),
@@ -371,7 +372,12 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                 const SizedBox(width: 16),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: _buildImage(variedad['imagen'], size: 80),
+                  child: _buildImage(
+                    variedad['imagen'] ?? 
+                    (variedad['links_imagenes'] != null && (variedad['links_imagenes'] as List).isNotEmpty 
+                      ? variedad['links_imagenes'][0] 
+                      : null), 
+                    size: 80),
                 ),
               ],
             ),

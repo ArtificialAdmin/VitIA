@@ -80,7 +80,8 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
 
   @override
   Widget build(BuildContext context) {
-    final bool isBlanca = widget.variedad['tipo'] == 'Blanca';
+    final String? tipo = (widget.variedad['tipo'] ?? widget.variedad['color'])?.toString();
+    final bool isBlanca = tipo?.toLowerCase() == 'blanca';
     final colorTema = isBlanca ? Colors.lime.shade700 : Colors.purple.shade900;
 
     final dynamic morfologia = widget.variedad['morfologia'];
@@ -210,8 +211,7 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
                               border: Border.all(color: colorTema),
                             ),
                             child: Text(
-                              (widget.variedad['tipo'] ?? 'Desconocido')
-                                  .toUpperCase(),
+                              (tipo ?? 'Desconocido').toUpperCase(),
                               style: TextStyle(
                                   color: colorTema,
                                   fontWeight: FontWeight.bold,
@@ -536,8 +536,17 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
   }
 
   Widget _buildImagen(Map<String, dynamic> variedad) {
-    final String? path = variedad['imagen'];
-    if (path == null)
+    String? path = variedad['imagen'];
+    
+    // Fallback a links_imagenes
+    if (path == null || path.isEmpty) {
+      final links = variedad['links_imagenes'];
+      if (links != null && (links as List).isNotEmpty) {
+        path = links[0];
+      }
+    }
+
+    if (path == null || path.isEmpty)
       return const Center(
           child:
               Icon(Icons.image_not_supported, color: Colors.white, size: 50));
