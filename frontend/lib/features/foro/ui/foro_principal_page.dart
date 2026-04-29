@@ -288,7 +288,7 @@ class _ForoPageState extends ConsumerState<ForoPrincipalPage>
                                             _searchQuery = value;
                                           });
                                         },
-                                        autofocus: true,
+                                        autofocus: false,
                                       decoration: InputDecoration(
                                         hintText: "Buscar...",
                                         prefixIcon: const Icon(Icons.search,

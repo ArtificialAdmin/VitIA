@@ -240,11 +240,36 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
 
   void _discardPremiumCapture() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("¿Descartar identificación?"),
+        content: const Text("Se borrarán todas las fotos capturadas en esta sesión y volverás al inicio."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CANCELAR", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _doDiscardPremiumCapture();
+            },
+            child: const Text("DESCARTAR", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _doDiscardPremiumCapture() {
     setState(() {
       for (var step in PremiumStep.values) {
         _premiumPhotosMap[step]!.clear();
       }
       _premiumStep = PremiumStep.leafFront;
+      // Also clear global photos if any
+      _capturedPhotos.clear();
     });
   }
 
@@ -1244,7 +1269,21 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                                         : Image.file(File(file.path), fit: BoxFit.cover),
                                   ),
                                 ),
-
+                                 Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => _removePhotoFromStep(step, idx),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           );
