@@ -15,18 +15,18 @@ class BibliotecaCatalogoPage extends ConsumerStatefulWidget {
   final VoidCallback? onCameraTap;
 
   const BibliotecaCatalogoPage({
-    super.key, 
-    this.initialTab = 0, 
+    super.key,
+    this.initialTab = 0,
     this.onCameraTap,
   });
 
   @override
-  ConsumerState<BibliotecaCatalogoPage> createState() => _BibliotecaCatalogoPageState();
+  ConsumerState<BibliotecaCatalogoPage> createState() =>
+      _BibliotecaCatalogoPageState();
 }
 
 class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
     with SingleTickerProviderStateMixin {
-  
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
@@ -47,7 +47,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.index = widget.initialTab;
-    
+
     // Cargamos los datos iniciales
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cargarTodo();
@@ -64,7 +64,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
   Future<void> _cargarTodo() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
-    
+
     try {
       await Future.wait([
         _cargarVariedadesBackend(),
@@ -158,7 +158,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
 
         setState(() {
           _mapaVariedadesUsuario = agrupado;
-          _filtradasColeccion = agrupado.keys.map((nombre) => agrupado[nombre]![0]).toList();
+          _filtradasColeccion =
+              agrupado.keys.map((nombre) => agrupado[nombre]![0]).toList();
         });
       }
     } catch (e) {
@@ -169,9 +170,10 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
   void _filtrar(String query) {
     setState(() {
       _filtradas = _variedades.where((v) {
-        final matchesQuery = v['nombre'].toLowerCase().contains(query.toLowerCase());
-        final matchesColor = _currentFilterColor == 'all' || 
-                           v['tipo'].toString().toLowerCase() == _currentFilterColor;
+        final matchesQuery =
+            v['nombre'].toLowerCase().contains(query.toLowerCase());
+        final matchesColor = _currentFilterColor == 'all' ||
+            v['tipo'].toString().toLowerCase() == _currentFilterColor;
         return matchesQuery && matchesColor;
       }).toList();
     });
@@ -183,7 +185,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
       await api.toggleFavorite(idVariedad);
       _cargarFavoritosBackend();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error al actualizar favorito")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error al actualizar favorito")));
     }
   }
 
@@ -191,7 +194,11 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
     if (widget.onCameraTap != null) {
       widget.onCameraTap!();
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ColeccionCapturaPage())).then((_) => _cargarTodo());
+      Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const ColeccionCapturaPage()))
+          .then((_) => _cargarTodo());
     }
   }
 
@@ -350,7 +357,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                             child: Icon(
                                 esFav ? Icons.favorite : Icons.favorite_border,
                                 size: 24,
-                                color: esFav ? Colors.redAccent : Colors.black54),
+                                color:
+                                    esFav ? Colors.redAccent : Colors.black54),
                           ),
                         ],
                       ),
@@ -373,11 +381,13 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: _buildImage(
-                    variedad['imagen'] ?? 
-                    (variedad['links_imagenes'] != null && (variedad['links_imagenes'] as List).isNotEmpty 
-                      ? variedad['links_imagenes'][0] 
-                      : null), 
-                    size: 80),
+                      variedad['imagen'] ??
+                          (variedad['links_imagenes'] != null &&
+                                  (variedad['links_imagenes'] as List)
+                                      .isNotEmpty
+                              ? variedad['links_imagenes'][0]
+                              : null),
+                      size: 80),
                 ),
               ],
             ),
@@ -440,7 +450,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                             child: Icon(
                                 esFav ? Icons.favorite : Icons.favorite_border,
                                 size: 24,
-                                color: esFav ? Colors.redAccent : Colors.black54),
+                                color:
+                                    esFav ? Colors.redAccent : Colors.black54),
                           ),
                         ],
                       ),
@@ -454,12 +465,25 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                       ),
                       const SizedBox(height: 12),
                       _buildColorBadge(originalVar['color']),
-                      if (cantidad > 0) ...[
+                      if (cantidad == 1) ...[
                         const SizedBox(height: 10),
-                        Text("$cantidad capturas",
-                            style: const TextStyle(
-                                color: Colors.grey, fontSize: 12))
-                      ]
+                        Text(
+                          "$cantidad captura",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ] else if (cantidad > 1) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          "$cantidad capturas",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -557,7 +581,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
       } else {
         // Fallback: intentar cargarlo desde el backend si no parece ruta de archivo
         final baseUrl = getBaseUrl();
-        final fullUrl = path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
+        final fullUrl =
+            path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
         img = NetworkImage(fullUrl);
       }
     }
@@ -578,7 +603,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
             width: size,
             height: size,
             color: Colors.grey.shade200,
-            child: Icon(Icons.broken_image, color: Colors.grey, size: size * 0.5),
+            child:
+                Icon(Icons.broken_image, color: Colors.grey, size: size * 0.5),
           ),
         );
       },
@@ -648,7 +674,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                 }),
               ),
             ),
-            
+
             // TABS
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -663,11 +689,17 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                 indicator: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(25),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2))
+                  ],
                 ),
                 labelColor: Colors.black87,
                 unselectedLabelColor: Colors.grey.shade500,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                labelStyle:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                 splashBorderRadius: BorderRadius.circular(30),
                 padding: const EdgeInsets.all(5),
                 tabs: const [Tab(text: "Todas"), Tab(text: "Tus variedades")],
@@ -682,77 +714,103 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                 child: SizedBox(
                   height: _showSearch ? null : 0,
                   width: double.infinity,
-                  child: _showSearch ? _buildSearchBarAndFilters() : const SizedBox.shrink(),
+                  child: _showSearch
+                      ? _buildSearchBarAndFilters()
+                      : const SizedBox.shrink(),
                 ),
               ),
             ),
 
             Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // TAB 1: TODAS
-                      CustomScrollView(
-                        slivers: [
-                          SliverToBoxAdapter(child: _buildFavoritosSection()),
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                              child: Text('Todas las variedades (${_filtradas.length})', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                            ),
-                          ),
-                          _filtradas.isEmpty
-                            ? const SliverFillRemaining(child: Center(child: Text("No se encontraron variedades")))
-                            : SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) => _buildVarietyCard(_filtradas[index]),
-                                  childCount: _filtradas.length,
-                                ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // TAB 1: TODAS
+                        CustomScrollView(
+                          slivers: [
+                            SliverToBoxAdapter(child: _buildFavoritosSection()),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0, vertical: 12.0),
+                                child: Text(
+                                    'Todas las variedades (${_filtradas.length})',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey)),
                               ),
-                          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                        ],
-                      ),
-
-                      // TAB 2: COLECCION
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text("Mis variedades (${_filtradasColeccion.length})", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                             ),
-                          ),
-                          Expanded(
-                            child: _filtradasColeccion.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.wine_bar, size: 50, color: Colors.grey),
-                                      const SizedBox(height: 10),
-                                      const Text('Tu colección está vacía.'),
-                                      TextButton(onPressed: _abrirCamara, child: const Text('¡Escanea tu primera variedad!')),
-                                    ],
+                            _filtradas.isEmpty
+                                ? const SliverFillRemaining(
+                                    child: Center(
+                                        child: Text(
+                                            "No se encontraron variedades")))
+                                : SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) =>
+                                          _buildVarietyCard(_filtradas[index]),
+                                      childCount: _filtradas.length,
+                                    ),
                                   ),
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(bottom: 150),
-                                  itemCount: _filtradasColeccion.length + 1,
-                                  itemBuilder: (context, index) {
-                                    if (index == _filtradasColeccion.length) {
-                                      return _buildAddCollectionCard();
-                                    }
-                                    return _buildCollectionGroupCard(_filtradasColeccion[index]);
-                                  },
-                                ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            const SliverToBoxAdapter(
+                                child: SizedBox(height: 100)),
+                          ],
+                        ),
+
+                        // TAB 2: COLECCION
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 12.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                    "Mis variedades (${_filtradasColeccion.length})",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey)),
+                              ),
+                            ),
+                            Expanded(
+                              child: _filtradasColeccion.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.wine_bar,
+                                              size: 50, color: Colors.grey),
+                                          const SizedBox(height: 10),
+                                          const Text(
+                                              'Tu colección está vacía.'),
+                                          TextButton(
+                                              onPressed: _abrirCamara,
+                                              child: const Text(
+                                                  '¡Escanea tu primera variedad!')),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 150),
+                                      itemCount: _filtradasColeccion.length + 1,
+                                      itemBuilder: (context, index) {
+                                        if (index ==
+                                            _filtradasColeccion.length) {
+                                          return _buildAddCollectionCard();
+                                        }
+                                        return _buildCollectionGroupCard(
+                                            _filtradasColeccion[index]);
+                                      },
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
