@@ -464,9 +464,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             final bool? saved = await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => PremiumResultPage(
-                  variety: premiumPredictions.first.variedad,
-                  confidence: premiumPredictions.first.confianza,
-                  color: premiumPredictions.first.color,
+                  allPredictions: premiumPredictions,
                   photos: List.from(_capturedPhotos),
                   analysisText: premiumAnalysis,
                   hasMissingPhases: hasMissing,
@@ -982,7 +980,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             onPressed: canProceed ? _onNextPremiumStep : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: canProceed 
-                  ? const Color(0xFFD4AF37) 
+                  ? const Color(0xFFD4AF37) // Dorado/Amarillo para Finalizar
                   : Colors.grey.withOpacity(0.3),
               foregroundColor: canProceed 
                   ? Colors.black 
@@ -1000,10 +998,10 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             onPressed: canProceed ? _onNextPremiumStep : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: canProceed 
-                  ? const Color(0xFFD4AF37) 
+                  ? const Color(0xFF7A7A30) // Verde Olivo para Siguiente
                   : Colors.grey.withOpacity(0.3),
               foregroundColor: canProceed 
-                  ? Colors.black 
+                  ? Colors.white 
                   : Colors.white24,
               minimumSize: const Size(44, 44),
               padding: EdgeInsets.zero,

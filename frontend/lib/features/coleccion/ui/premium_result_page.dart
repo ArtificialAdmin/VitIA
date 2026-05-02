@@ -5,25 +5,22 @@ import 'package:image_picker/image_picker.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/core/constants.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vinas_mobile/core/models/prediction_model.dart';
 
 class PremiumResultPage extends ConsumerStatefulWidget {
-  final String variety;
-  final double confidence;
+  final List<PredictionModel> allPredictions;
   final List<XFile> photos;
   final String analysisText;
   final bool hasMissingPhases;
-  final String? color;
   final double? lat;
   final double? lon;
 
   const PremiumResultPage({
     super.key,
-    required this.variety,
-    required this.confidence,
+    required this.allPredictions,
     required this.photos,
     required this.analysisText,
     this.hasMissingPhases = false,
-    this.color,
     this.lat,
     this.lon,
   });
@@ -33,9 +30,16 @@ class PremiumResultPage extends ConsumerStatefulWidget {
 }
 
 class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
+  late PredictionModel _selectedPrediction;
   int _coverIndex = 0;
   bool _isSaving = false;
   final TextEditingController _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPrediction = widget.allPredictions.first;
+  }
 
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
@@ -45,7 +49,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
       await api.saveToCollection(
         imageFile: widget.photos[_coverIndex], // Selected cover
         premiumFiles: widget.photos, // All 4 photos
-        nombreVariedad: widget.variety,
+        nombreVariedad: _selectedPrediction.variedad,
         analisisIA: widget.analysisText,
         notas: _notesController.text,
         lat: widget.lat,
@@ -95,7 +99,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
               child: Column(
                 children: [
                   Text(
-                    widget.variety,
+                    _selectedPrediction.variedad,
                     style: GoogleFonts.lora(
                       color: Colors.black87,
                       fontSize: 32,
@@ -105,7 +109,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                   ),
                   const SizedBox(height: 8),
                   Builder(builder: (context) {
-                    final bool isBlanca = widget.color?.toLowerCase() == 'blanca';
+                    final bool isBlanca = _selectedPrediction.color?.toLowerCase() == 'blanca';
                     final Color badgeColor = isBlanca
                         ? const Color(0xFF8B8000)
                         : const Color(0xFF800020);
@@ -118,7 +122,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                         border: Border.all(color: badgeColor.withOpacity(0.3)),
                       ),
                       child: Text(
-                        'Confianza: ${widget.confidence.toStringAsFixed(1)}%',
+                        'Confianza: ${_selectedPrediction.confianza.toStringAsFixed(1)}%',
                         style: TextStyle(
                           color: badgeColor,
                           fontWeight: FontWeight.bold,
@@ -129,6 +133,98 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                 ],
               ),
             ),
+
+            // 1.5 Opciones alternativas (Lógica de umbral del 66%)
+            Builder(builder: (context) {
+              final bool lowConfidence = widget.allPredictions.first.confianza <= 66.0;
+              
+              if (widget.allPredictions.length <= 1) return const SizedBox.shrink();
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (lowConfidence) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                "La confianza es baja (${widget.allPredictions.first.confianza.toStringAsFixed(1)}%). Por favor, selecciona la variedad que consideres correcta:",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.orange[900],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ] else ...[
+                      const Text(
+                        "Otras posibles variedades:",
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: widget.allPredictions.length,
+                        itemBuilder: (context, idx) {
+                          final p = widget.allPredictions[idx];
+                          final bool isSelected = _selectedPrediction == p;
+                          final bool isBlanca = p.color?.toLowerCase() == 'blanca';
+                          final Color varietyColor = isBlanca
+                              ? const Color(0xFF8B8000)
+                              : const Color(0xFF800020);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(p.variedad),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _selectedPrediction = p);
+                                }
+                              },
+                              selectedColor: varietyColor.withOpacity(0.2),
+                              labelStyle: TextStyle(
+                                color: isSelected ? varietyColor : Colors.black54,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: isSelected ? varietyColor : Colors.grey.shade300,
+                                  ),
+                                ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              );
+            }),
 
             // 2. Main Photo Carousel
             SizedBox(
