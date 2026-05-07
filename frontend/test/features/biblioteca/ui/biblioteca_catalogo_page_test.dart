@@ -23,6 +23,8 @@ void main() {
   setUp(() {
     // Antes de cada test, reiniciamos el mock
     mockApiClient = MockApiClient();
+    when(mockApiClient.getCollection()).thenAnswer((_) async => []);
+    when(mockApiClient.getFavorites()).thenAnswer((_) async => []);
   });
 
   // CASO DE PRUEBA 1: Verificar que la lista carga datos correctamente

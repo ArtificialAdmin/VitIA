@@ -1,0 +1,51 @@
+﻿00:00 +0: loading C:/Users/elemu/Documents/UPV/4/PIN/Repositorio/VitIA/frontend/test/features/biblioteca/ui/biblioteca_catalogo_page_test.dart
+00:00 +0: Debe mostrar variedades cuando el backend responde con datos
+Library collection error: MissingStubError: 'getCollection'
+No stub was found which matches the arguments of this method call:
+getCollection()
+
+Add a stub for this method using Mockito's 'when' API, or generate the MockApiClient mock with the @GenerateNiceMocks annotation (see https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).
+Error loading favorites: MissingStubError: 'getFavorites'
+No stub was found which matches the arguments of this method call:
+getFavorites()
+
+Add a stub for this method using Mockito's 'when' API, or generate the MockApiClient mock with the @GenerateNiceMocks annotation (see https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).
+00:01 +1: Debe mostrar SnackBar rojo cuando falla la conexi├│n
+Error loading varieties: Exception: Fallo de red
+Library collection error: MissingStubError: 'getCollection'
+No stub was found which matches the arguments of this method call:
+getCollection()
+
+Add a stub for this method using Mockito's 'when' API, or generate the MockApiClient mock with the @GenerateNiceMocks annotation (see https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).
+Error loading favorites: MissingStubError: 'getFavorites'
+No stub was found which matches the arguments of this method call:
+getFavorites()
+
+Add a stub for this method using Mockito's 'when' API, or generate the MockApiClient mock with the @GenerateNiceMocks annotation (see https://pub.dev/documentation/mockito/latest/annotations/MockSpec-class.html).
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Error de conexi├│n: No se pudieron cargar las
+vi├▒as": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/elemu/Documents/UPV/4/PIN/Repositorio/VitIA/frontend/test/features/biblioteca/ui/biblioteca_catalogo_page_test.dart:88:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/elemu/Documents/UPV/4/PIN/Repositorio/VitIA/frontend/test/features/biblioteca/ui/biblioteca_catalogo_page_test.dart line 88
+The test description was:
+  Debe mostrar SnackBar rojo cuando falla la conexi├│n
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:01 +1 -1: Debe mostrar SnackBar rojo cuando falla la conexi├│n [E]
+  Test failed. See exception logs above.
+  The test description was: Debe mostrar SnackBar rojo cuando falla la conexi├│n
+  
+00:01 +1 -1: Some tests failed.

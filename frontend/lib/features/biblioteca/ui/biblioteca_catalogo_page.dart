@@ -99,6 +99,11 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
       }
     } catch (e) {
       debugPrint("Error loading varieties: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error de conexión: No se pudieron cargar las viñas')),
+        );
+      }
     }
   }
 
@@ -583,7 +588,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
         img = FileImage(File(path));
       } else {
         // Fallback: intentar cargarlo desde el backend si no parece ruta de archivo
-        final baseUrl = APIConfig.baseUrl;
+        final baseUrl = getBaseUrl();
         final fullUrl =
             path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
         img = NetworkImage(fullUrl);
