@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
 // Asegúrate de que estos imports sean correctos
-import 'package:vinas_mobile/core/api_client.dart';
+
 import 'package:vinas_mobile/core/providers.dart';
 
 class TutorialPage extends ConsumerStatefulWidget {
@@ -85,7 +85,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 3),
@@ -465,7 +465,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF142018).withOpacity(0.5),
+              color: const Color(0xFF142018).withValues(alpha: 0.5),
               spreadRadius: 2,
               blurRadius: 10,
               offset: const Offset(0, 5),

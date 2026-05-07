@@ -3,19 +3,21 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i10;
-import 'dart:ui' as _i9;
+import 'dart:async' as _i11;
+import 'dart:ui' as _i10;
 
-import 'package:dio/dio.dart' as _i7;
-import 'package:image_picker/image_picker.dart' as _i11;
+import 'package:dio/dio.dart' as _i8;
+import 'package:image_picker/image_picker.dart' as _i12;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:vinas_mobile/core/api_client.dart' as _i8;
-import 'package:vinas_mobile/core/models/prediction_model.dart' as _i12;
+import 'package:vinas_mobile/core/api_client.dart' as _i9;
+import 'package:vinas_mobile/core/models/prediction_model.dart' as _i13;
 import 'package:vinas_mobile/features/auth/services/auth_service.dart' as _i2;
 import 'package:vinas_mobile/features/biblioteca/services/biblioteca_service.dart'
     as _i5;
 import 'package:vinas_mobile/features/coleccion/services/coleccion_service.dart'
     as _i4;
+import 'package:vinas_mobile/features/experto/services/experto_service.dart'
+    as _i7;
 import 'package:vinas_mobile/features/foro/services/foro_service.dart' as _i3;
 import 'package:vinas_mobile/features/perfil/services/perfil_service.dart'
     as _i6;
@@ -87,8 +89,19 @@ class _FakePerfilService_4 extends _i1.SmartFake implements _i6.PerfilService {
         );
 }
 
-class _FakeDio_5 extends _i1.SmartFake implements _i7.Dio {
-  _FakeDio_5(
+class _FakeExpertoService_5 extends _i1.SmartFake
+    implements _i7.ExpertoService {
+  _FakeExpertoService_5(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeDio_6 extends _i1.SmartFake implements _i8.Dio {
+  _FakeDio_6(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -100,7 +113,7 @@ class _FakeDio_5 extends _i1.SmartFake implements _i7.Dio {
 /// A class which mocks [ApiClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockApiClient extends _i1.Mock implements _i8.ApiClient {
+class MockApiClient extends _i1.Mock implements _i9.ApiClient {
   MockApiClient() {
     _i1.throwOnMissingStub(this);
   }
@@ -151,16 +164,25 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
       ) as _i6.PerfilService);
 
   @override
-  _i7.Dio get dioInstance => (super.noSuchMethod(
+  _i7.ExpertoService get expertoDataSource => (super.noSuchMethod(
+        Invocation.getter(#expertoDataSource),
+        returnValue: _FakeExpertoService_5(
+          this,
+          Invocation.getter(#expertoDataSource),
+        ),
+      ) as _i7.ExpertoService);
+
+  @override
+  _i8.Dio get dioInstance => (super.noSuchMethod(
         Invocation.getter(#dioInstance),
-        returnValue: _FakeDio_5(
+        returnValue: _FakeDio_6(
           this,
           Invocation.getter(#dioInstance),
         ),
-      ) as _i7.Dio);
+      ) as _i8.Dio);
 
   @override
-  set onTokenExpired(_i9.VoidCallback? value) => super.noSuchMethod(
+  set onTokenExpired(_i10.VoidCallback? value) => super.noSuchMethod(
         Invocation.setter(
           #onTokenExpired,
           value,
@@ -178,48 +200,48 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
       );
 
   @override
-  _i10.Future<Map<String, dynamic>> ping() => (super.noSuchMethod(
+  _i11.Future<Map<String, dynamic>> ping() => (super.noSuchMethod(
         Invocation.method(
           #ping,
           [],
         ),
         returnValue:
-            _i10.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i10.Future<Map<String, dynamic>>);
+            _i11.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i11.Future<Map<String, dynamic>>);
 
   @override
-  _i10.Future<void> logout() => (super.noSuchMethod(
+  _i11.Future<void> logout() => (super.noSuchMethod(
         Invocation.method(
           #logout,
           [],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<List<dynamic>> getPublicaciones() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getPublicaciones() => (super.noSuchMethod(
         Invocation.method(
           #getPublicaciones,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<List<dynamic>> getUserPublicaciones() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getUserPublicaciones() => (super.noSuchMethod(
         Invocation.method(
           #getUserPublicaciones,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<void> createPublicacion(
+  _i11.Future<void> createPublicacion(
     String? titulo,
     String? texto, {
-    _i11.XFile? imageFile,
+    _i12.XFile? imageFile,
     double? latitud,
     double? longitud,
     bool? esPublica = true,
@@ -238,74 +260,74 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
             #esPublica: esPublica,
           },
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> deletePublicacion(int? idPublicacion) =>
+  _i11.Future<void> deletePublicacion(int? idPublicacion) =>
       (super.noSuchMethod(
         Invocation.method(
           #deletePublicacion,
           [idPublicacion],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<List<dynamic>> getComentariosPublicacion(int? idPublicacion) =>
+  _i11.Future<List<dynamic>> getComentariosPublicacion(int? idPublicacion) =>
       (super.noSuchMethod(
         Invocation.method(
           #getComentariosPublicacion,
           [idPublicacion],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<void> likePublicacion(int? idPublicacion) => (super.noSuchMethod(
+  _i11.Future<void> likePublicacion(int? idPublicacion) => (super.noSuchMethod(
         Invocation.method(
           #likePublicacion,
           [idPublicacion],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> unlikePublicacion(int? idPublicacion) =>
+  _i11.Future<void> unlikePublicacion(int? idPublicacion) =>
       (super.noSuchMethod(
         Invocation.method(
           #unlikePublicacion,
           [idPublicacion],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> likeComentario(int? idComentario) => (super.noSuchMethod(
+  _i11.Future<void> likeComentario(int? idComentario) => (super.noSuchMethod(
         Invocation.method(
           #likeComentario,
           [idComentario],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> unlikeComentario(int? idComentario) => (super.noSuchMethod(
+  _i11.Future<void> unlikeComentario(int? idComentario) => (super.noSuchMethod(
         Invocation.method(
           #unlikeComentario,
           [idComentario],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> createComentario(
+  _i11.Future<void> createComentario(
     int? idPublicacion,
     String? texto, {
     int? idPadre,
@@ -319,12 +341,12 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
           ],
           {#idPadre: idPadre},
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> votarComentario(
+  _i11.Future<void> votarComentario(
     int? idComentario,
     bool? esLike,
   ) =>
@@ -336,28 +358,31 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
             esLike,
           ],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> deleteComentario(int? idComentario) => (super.noSuchMethod(
+  _i11.Future<void> deleteComentario(int? idComentario) => (super.noSuchMethod(
         Invocation.method(
           #deleteComentario,
           [idComentario],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> saveToCollection({
-    required _i11.XFile? imageFile,
+  _i11.Future<void> saveToCollection({
+    required _i12.XFile? imageFile,
     required String? nombreVariedad,
     String? notas,
     double? lat,
     double? lon,
     bool? esPublica = true,
+    List<_i12.XFile>? premiumFiles,
+    String? analisisIA,
+    bool? solicitaValidacionExperto = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -370,32 +395,35 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
             #lat: lat,
             #lon: lon,
             #esPublica: esPublica,
+            #premiumFiles: premiumFiles,
+            #analisisIA: analisisIA,
+            #solicitaValidacionExperto: solicitaValidacionExperto,
           },
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<List<dynamic>> getCollection() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getCollection() => (super.noSuchMethod(
         Invocation.method(
           #getCollection,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<List<dynamic>> getUserCollection() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getUserCollection() => (super.noSuchMethod(
         Invocation.method(
           #getUserCollection,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<void> updateCollectionItem(
+  _i11.Future<void> updateCollectionItem(
     int? idColeccion,
     Map<String, dynamic>? updates,
   ) =>
@@ -407,109 +435,121 @@ class MockApiClient extends _i1.Mock implements _i8.ApiClient {
             updates,
           ],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> deleteCollectionItem(int? idColeccion) =>
+  _i11.Future<void> deleteCollectionItem(int? idColeccion) =>
       (super.noSuchMethod(
         Invocation.method(
           #deleteCollectionItem,
           [idColeccion],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<List<dynamic>> getColeccionesMapa({String? modo = 'publico'}) =>
+  _i11.Future<List<dynamic>> getColeccionesMapa({String? modo = 'publico'}) =>
       (super.noSuchMethod(
         Invocation.method(
           #getColeccionesMapa,
           [],
           {#modo: modo},
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<List<dynamic>> getVariedades() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getVariedades() => (super.noSuchMethod(
         Invocation.method(
           #getVariedades,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<List<_i12.PredictionModel>> predictImage(_i11.XFile? file) =>
+  _i11.Future<List<_i13.PredictionModel>> predictImageBase(_i12.XFile? file) =>
       (super.noSuchMethod(
         Invocation.method(
-          #predictImage,
+          #predictImageBase,
           [file],
         ),
-        returnValue: _i10.Future<List<_i12.PredictionModel>>.value(
-            <_i12.PredictionModel>[]),
-      ) as _i10.Future<List<_i12.PredictionModel>>);
+        returnValue: _i11.Future<List<_i13.PredictionModel>>.value(
+            <_i13.PredictionModel>[]),
+      ) as _i11.Future<List<_i13.PredictionModel>>);
 
   @override
-  _i10.Future<Map<String, dynamic>> getMe() => (super.noSuchMethod(
+  _i11.Future<Map<String, dynamic>> predictImagePremium(
+          List<_i12.XFile>? files) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #predictImagePremium,
+          [files],
+        ),
+        returnValue:
+            _i11.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i11.Future<Map<String, dynamic>>);
+
+  @override
+  _i11.Future<Map<String, dynamic>> getMe() => (super.noSuchMethod(
         Invocation.method(
           #getMe,
           [],
         ),
         returnValue:
-            _i10.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i10.Future<Map<String, dynamic>>);
+            _i11.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i11.Future<Map<String, dynamic>>);
 
   @override
-  _i10.Future<void> updateProfile(Map<String, dynamic>? data) =>
+  _i11.Future<void> updateProfile(Map<String, dynamic>? data) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateProfile,
           [data],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> uploadAvatar(_i11.XFile? imageFile) => (super.noSuchMethod(
+  _i11.Future<void> uploadAvatar(_i12.XFile? imageFile) => (super.noSuchMethod(
         Invocation.method(
           #uploadAvatar,
           [imageFile],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<void> toggleFavorite(int? idVariedad) => (super.noSuchMethod(
+  _i11.Future<void> toggleFavorite(int? idVariedad) => (super.noSuchMethod(
         Invocation.method(
           #toggleFavorite,
           [idVariedad],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 
   @override
-  _i10.Future<List<dynamic>> getFavorites() => (super.noSuchMethod(
+  _i11.Future<List<dynamic>> getFavorites() => (super.noSuchMethod(
         Invocation.method(
           #getFavorites,
           [],
         ),
-        returnValue: _i10.Future<List<dynamic>>.value(<dynamic>[]),
-      ) as _i10.Future<List<dynamic>>);
+        returnValue: _i11.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i11.Future<List<dynamic>>);
 
   @override
-  _i10.Future<void> markTutorialAsComplete() => (super.noSuchMethod(
+  _i11.Future<void> markTutorialAsComplete() => (super.noSuchMethod(
         Invocation.method(
           #markTutorialAsComplete,
           [],
         ),
-        returnValue: _i10.Future<void>.value(),
-        returnValueForMissingStub: _i10.Future<void>.value(),
-      ) as _i10.Future<void>);
+        returnValue: _i11.Future<void>.value(),
+        returnValueForMissingStub: _i11.Future<void>.value(),
+      ) as _i11.Future<void>);
 }

@@ -64,8 +64,8 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
       });
     } catch (e) {
       debugPrint("Error loading map data: $e");
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error al cargar mapa: $e")),
         );
@@ -427,7 +427,7 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Text("Sin capturas con ubicación", style: TextStyle(fontWeight: FontWeight.bold)),

@@ -3,8 +3,6 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'coleccion_detalle_page.dart';
-import 'package:vinas_mobile/core/api_client.dart';
-import 'package:vinas_mobile/core/api_config.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,7 +53,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
   Future<void> _loadCustomCover() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = AuthSessionService.userId ?? 0; // Fallback safe ID
-    final key = "cover_$userId" + "_" + widget.varietyInfo['nombre'];
+    final key = "cover_${userId}_${widget.varietyInfo['nombre']}";
     setState(() {
       _customCoverPath = prefs.getString(key);
     });
@@ -64,7 +62,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
   Future<void> _setAsCover(String path) async {
     final prefs = await SharedPreferences.getInstance();
     final userId = AuthSessionService.userId ?? 0;
-    final key = "cover_$userId" + "_" + widget.varietyInfo['nombre'];
+    final key = "cover_${userId}_${widget.varietyInfo['nombre']}";
     await prefs.setString(key, path);
     setState(() {
       _customCoverPath = path;
@@ -88,9 +86,11 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
       setState(() {
         _isFavorito = !_isFavorito;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar favoritos')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar favoritos')),
+        );
+      }
     }
   }
 
@@ -142,7 +142,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
     if (_selectedCapture != null) {
       return PopScope(
         canPop: false,
-        onPopInvoked: (didPop) {
+        onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           setState(() => _selectedCapture = null);
         },
@@ -255,7 +255,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                  color: colorTema.withOpacity(0.1),
+                                  color: colorTema.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: colorTema)),
                               child: Text(
@@ -359,7 +359,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -381,14 +381,14 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                             Container(
                               padding: const EdgeInsets.all(4),
                               margin: const EdgeInsets.only(right: 6),
-                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
                               child: const Icon(Icons.auto_awesome, size: 16, color: Colors.amber),
                             ),
                           GestureDetector(
                             onTap: () => _setAsCover(item['imagen'] ?? item['path_foto_usuario']),
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
                               child: Icon(_customCoverPath == (item['imagen'] ?? item['path_foto_usuario']) ? Icons.star : Icons.star_border, size: 20, color: Colors.orange),
                             ),
                           ),
@@ -421,22 +421,30 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
   Widget _buildImage(String? path) {
     if (path == null) return Container(color: Colors.grey.shade300, child: const Icon(Icons.image_not_supported));
     ImageProvider img;
-    if (path.startsWith('http')) img = NetworkImage(path);
-    else if (path.startsWith('assets/')) img = AssetImage(path);
-    else img = FileImage(File(path));
+    if (path.startsWith('http')) {
+      img = NetworkImage(path);
+    } else if (path.startsWith('assets/')) {
+      img = AssetImage(path);
+    } else {
+      img = FileImage(File(path));
+    }
     return Image(image: img, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(color: Colors.grey.shade200));
   }
 
   Widget _buildMainImage(String path) {
     ImageProvider img;
-    if (path.startsWith('http')) img = NetworkImage(path);
-    else if (path.startsWith('assets/')) img = AssetImage(path);
-    else img = FileImage(File(path));
+    if (path.startsWith('http')) {
+      img = NetworkImage(path);
+    } else if (path.startsWith('assets/')) {
+      img = AssetImage(path);
+    } else {
+      img = FileImage(File(path));
+    }
     return Stack(
       fit: StackFit.expand,
       children: [
         Image(image: img, fit: BoxFit.cover),
-        BackdropFilter(filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), child: Container(color: Colors.black.withOpacity(0.3))),
+        BackdropFilter(filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), child: Container(color: Colors.black.withValues(alpha: 0.3))),
         Align(alignment: Alignment.topCenter, child: Image(image: img, fit: BoxFit.contain, alignment: Alignment.topCenter)),
       ],
     );

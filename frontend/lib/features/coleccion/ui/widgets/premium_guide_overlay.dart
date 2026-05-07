@@ -19,7 +19,7 @@ class PremiumGuideOverlay extends StatelessWidget {
       children: [
         // Silhouette Guide
         Center(
-          child: Container(
+          child: SizedBox(
             width: 280,
             height: 280,
             child: CustomPaint(
@@ -40,7 +40,7 @@ class SilhouettePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.greenAccent.withOpacity(0.6)
+      ..color = Colors.greenAccent.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
@@ -109,7 +109,7 @@ class SilhouettePainter extends CustomPainter {
     
     // Advanced Veins
     final veinPaint = Paint()
-      ..color = paint.color.withOpacity(0.25)
+      ..color = paint.color.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
       
@@ -132,7 +132,7 @@ class SilhouettePainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     // Organic arrangement of grapes (circles)
-    final offsets = [
+    final offsets = const [
       Offset(0, -1.8), // Top central
       Offset(-0.9, -1.2), Offset(0.9, -1.2),
       Offset(-1.2, -0.2), Offset(0, -0.2), Offset(1.2, -0.2),
@@ -169,7 +169,7 @@ class SilhouettePainter extends CustomPainter {
     
     // Refined Shiny Arc
     final shinePaint = Paint()
-      ..color = paint.color.withOpacity(0.4)
+      ..color = paint.color.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
       

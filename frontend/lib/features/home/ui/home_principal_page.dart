@@ -215,7 +215,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: darkBarColor.withOpacity(0.5),
+                  color: darkBarColor.withValues(alpha: 0.5),
                   spreadRadius: 2,
                   blurRadius: 10,
                   offset: const Offset(0, 5),

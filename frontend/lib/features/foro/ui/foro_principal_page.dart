@@ -203,7 +203,7 @@ class _ForoPageState extends ConsumerState<ForoPrincipalPage>
 
     return PopScope(
       canPop: !_isCreatingPost,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         setState(() => _isCreatingPost = false);
       },
@@ -250,7 +250,7 @@ class _ForoPageState extends ConsumerState<ForoPrincipalPage>
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 4,
                               offset: const Offset(0, 2))
                         ],
@@ -491,7 +491,7 @@ class _ForoPageState extends ConsumerState<ForoPrincipalPage>
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                     elevation: 4,
-                    shadowColor: const Color(0xFF7A7A30).withOpacity(0.4),
+                    shadowColor: const Color(0xFF7A7A30).withValues(alpha: 0.4),
                   ),
                   child: const Text("Crear hilo",
                       style:
@@ -729,7 +729,7 @@ class _RecentCard extends ConsumerWidget {
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isLiked
-                          ? Colors.red.withOpacity(0.1)
+                          ? Colors.red.withValues(alpha: 0.1)
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(20),
                     ),

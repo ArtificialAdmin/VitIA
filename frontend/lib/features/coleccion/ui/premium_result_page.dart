@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vinas_mobile/core/providers.dart';
-import 'package:vinas_mobile/core/constants.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vinas_mobile/core/models/prediction_model.dart';
 
@@ -119,9 +119,9 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: badgeColor.withOpacity(0.1),
+                        color: badgeColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: badgeColor.withOpacity(0.3)),
+                        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         'Confianza: ${_selectedPrediction.confianza.toStringAsFixed(1)}%',
@@ -151,9 +151,9 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -206,7 +206,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                                   setState(() => _selectedPrediction = p);
                                 }
                               },
-                              selectedColor: varietyColor.withOpacity(0.2),
+                              selectedColor: varietyColor.withValues(alpha: 0.2),
                               labelStyle: TextStyle(
                                 color: isSelected ? varietyColor : Colors.black54,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -244,7 +244,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -270,8 +270,8 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Row(
-                    children: const [
+                   const Row(
+                    children: [
                       Icon(Icons.photo_camera, color: Color(0xFFD4AF37), size: 20),
                       SizedBox(width: 8),
                       Text(
@@ -337,7 +337,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                   border: Border.all(color: Colors.grey[200]!),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     )
@@ -346,8 +346,8 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
                         SizedBox(width: 8),
                         Text(
@@ -440,7 +440,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                   style: TextStyle(fontSize: 13),
                 ),
                 value: _solicitaValidacionExperto,
-                activeColor: const Color(0xFFD4AF37),
+                activeThumbColor: const Color(0xFFD4AF37),
                 onChanged: (bool value) {
                   setState(() {
                     _solicitaValidacionExperto = value;

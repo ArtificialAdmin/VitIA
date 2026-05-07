@@ -54,10 +54,10 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
       ) as _i3.Future<List<dynamic>>);
 
   @override
-  _i3.Future<List<_i4.PredictionModel>> predictImage(_i5.XFile? file) =>
+  _i3.Future<List<_i4.PredictionModel>> predictImageBase(_i5.XFile? file) =>
       (super.noSuchMethod(
         Invocation.method(
-          #predictImage,
+          #predictImageBase,
           [file],
         ),
         returnValue: _i3.Future<List<_i4.PredictionModel>>.value(
@@ -71,7 +71,10 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
     String? notas,
     double? lat,
     double? lon,
-    bool? esPublica,
+    bool? esPublica = true,
+    List<_i5.XFile>? premiumFiles,
+    String? analisisIA,
+    bool? solicitaValidacionExperto = false,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -84,6 +87,9 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
             #lat: lat,
             #lon: lon,
             #esPublica: esPublica,
+            #premiumFiles: premiumFiles,
+            #analisisIA: analisisIA,
+            #solicitaValidacionExperto: solicitaValidacionExperto,
           },
         ),
         returnValue: _i3.Future<void>.value(),
@@ -182,14 +188,13 @@ class MockApiClient extends _i1.Mock implements _i2.ApiClient {
       ) as _i3.Future<void>);
 
   @override
-  _i3.Future<List<_i6.ColeccionModel>> getCollection() => (super.noSuchMethod(
+  _i3.Future<List<dynamic>> getCollection() => (super.noSuchMethod(
         Invocation.method(
           #getCollection,
           [],
         ),
-        returnValue:
-            _i3.Future<List<_i6.ColeccionModel>>.value(<_i6.ColeccionModel>[]),
-      ) as _i3.Future<List<_i6.ColeccionModel>>);
+        returnValue: _i3.Future<List<dynamic>>.value(<dynamic>[]),
+      ) as _i3.Future<List<dynamic>>);
 
 
   @override

@@ -4,10 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vinas_mobile/core/api_client.dart';
-import 'package:vinas_mobile/core/api_config.dart';
-import 'package:vinas_mobile/core/models/prediction_model.dart';
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart'; // Standard date formatting if available, or just use raw strings
@@ -15,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/perfil/providers/perfil_state_provider.dart';
+import 'package:vinas_mobile/core/models/prediction_model.dart';
 import 'package:vinas_mobile/features/coleccion/ui/premium_result_page.dart';
 import 'package:vinas_mobile/features/coleccion/ui/widgets/premium_guide_overlay.dart';
 
@@ -341,11 +338,6 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
     }
   }
 
-  void _removePhoto(int index) {
-    setState(() {
-      _capturedPhotos.removeAt(index);
-    });
-  }
 
   void _removePhotoDynamic(XFile file) {
     setState(() {
@@ -398,7 +390,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             // Get position with timeout
             try {
               position = await Geolocator.getCurrentPosition(
-                  timeLimit: const Duration(seconds: 5));
+                  locationSettings: const LocationSettings(timeLimit: Duration(seconds: 5)));
             } catch (e) {
               debugPrint("Error getting position: $e");
             }
@@ -981,7 +973,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             style: ElevatedButton.styleFrom(
               backgroundColor: canProceed 
                   ? const Color(0xFFD4AF37) // Dorado/Amarillo para Finalizar
-                  : Colors.grey.withOpacity(0.3),
+                  : Colors.grey.withValues(alpha: 0.3),
               foregroundColor: canProceed 
                   ? Colors.black 
                   : Colors.white24,
@@ -999,7 +991,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             style: ElevatedButton.styleFrom(
               backgroundColor: canProceed 
                   ? const Color(0xFF7A7A30) // Verde Olivo para Siguiente
-                  : Colors.grey.withOpacity(0.3),
+                  : Colors.grey.withValues(alpha: 0.3),
               foregroundColor: canProceed 
                   ? Colors.white 
                   : Colors.white24,
@@ -1272,7 +1264,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                                     onTap: () => _removePhotoFromStep(step, idx),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.5),
+                                        color: Colors.black.withValues(alpha: 0.5),
                                         shape: BoxShape.circle,
                                       ),
                                       padding: const EdgeInsets.all(4),
@@ -1351,7 +1343,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                       child: GestureDetector(
                         onTap: () => _removePhotoDynamic(file),
                         child: CircleAvatar(
-                          backgroundColor: Colors.white.withOpacity(0.9),
+                          backgroundColor: Colors.white.withValues(alpha: 0.9),
                           radius: 12,
                           child: const Icon(Icons.close,
                               size: 14, color: Colors.black),
@@ -1396,31 +1388,6 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
 
   // Helpers for grouped gallery
-  IconData _getStepIcon(PremiumStep step) {
-    switch (step) {
-      case PremiumStep.leafFront:
-        return Icons.eco;
-      case PremiumStep.leafBack:
-        return Icons.eco_outlined;
-      case PremiumStep.cluster:
-        return Icons.grain;
-      case PremiumStep.singleGrape:
-        return Icons.fiber_manual_record;
-    }
-  }
-
-  String _getStepTitle(PremiumStep step) {
-    switch (step) {
-      case PremiumStep.leafFront:
-        return "Haz de la hoja";
-      case PremiumStep.leafBack:
-        return "Envés de la hoja";
-      case PremiumStep.cluster:
-        return "Racimo completo";
-      case PremiumStep.singleGrape:
-        return "Detalle de uva";
-    }
-  }
 
   void _removePhotoFromStep(PremiumStep step, int index) {
     setState(() {
@@ -1429,18 +1396,18 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
 
   Widget _buildLoadingState() {
-    return Column(
+    return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 40),
-        const SizedBox(
+        SizedBox(height: 40),
+        SizedBox(
           width: 60,
           height: 60,
           child: CircularProgressIndicator(
               color: Color(0xFF8B1E5C), strokeWidth: 6),
         ),
-        const SizedBox(height: 24),
-        const Text("Identificando...",
+        SizedBox(height: 24),
+        Text("Identificando...",
             style: TextStyle(
                 fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500)),
       ],
@@ -1506,7 +1473,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.95),
+                            color: Colors.white.withValues(alpha: 0.95),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Column(
@@ -1569,7 +1536,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                                     ),
                                     Switch(
                                       value: group.isPublic,
-                                      activeColor: const Color(0xFF8B8036),
+                                      activeThumbColor: const Color(0xFF8B8036),
                                       onChanged: (val) {
                                         setState(() {
                                           group.isPublic = val;
@@ -1784,36 +1751,6 @@ class MosaicGallery extends StatelessWidget {
   }
 }
 
-Widget _buildBottomNav() {
-  return Container(
-    height: 70, // Slightly taller
-    margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-    decoration: BoxDecoration(
-      color: const Color(0xFF151D14), // Dark green/black
-      borderRadius: BorderRadius.circular(35),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        IconButton(
-            icon: const Icon(Icons.home_outlined, color: Colors.white54),
-            onPressed: () {}),
-        Container(
-          decoration:
-              const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-          padding: const EdgeInsets.all(8),
-          child: const Icon(Icons.camera_alt, color: Colors.black, size: 20),
-        ),
-        IconButton(
-            icon: const Icon(Icons.book_outlined, color: Colors.white54),
-            onPressed: () {}),
-        IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white54),
-            onPressed: () {}),
-      ],
-    ),
-  );
-}
 
 // Custom Painter for the brackets
 class ScannerOverlay extends StatelessWidget {

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vinas_mobile/shared/widgets/vitia_logo.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
-import 'auth_register_page.dart';
-import 'login_form_page.dart'; // <<< Nuevo archivo de formulario
 
+import 'login_form_page.dart'; // <<< Nuevo archivo de formulario
+import 'auth_register_page.dart';
 class AuthLoginPage extends StatefulWidget {
   const AuthLoginPage({super.key});
 
@@ -88,7 +88,7 @@ class _LoginPageState extends State<AuthLoginPage> {
         backgroundColor: _authMainColor, // Fondo color Vino VitIA
       // Botón flotante discreto para configuración (DESHABILITADO: Comenta si necesitas cambiar IP manual)
       floatingActionButton: FloatingActionButton.small(
-        backgroundColor: Colors.white.withOpacity(0.2),
+        backgroundColor: Colors.white.withValues(alpha: 0.2),
         elevation: 0,
         onPressed: () => _showServerConfigDialog(context),
         child: const Icon(Icons.settings, color: Colors.white),
@@ -123,7 +123,7 @@ class _LoginPageState extends State<AuthLoginPage> {
                 const SizedBox(height: 50),
 
                 // 🚨 BOTÓN 1: Iniciar Sesión (Lleva al formulario de credenciales)
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: OutlinedButton(
@@ -150,7 +150,7 @@ class _LoginPageState extends State<AuthLoginPage> {
                 const SizedBox(height: 15),
 
                 // 🚨 BOTÓN 2: Registrarse (Lleva al formulario de registro)
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(

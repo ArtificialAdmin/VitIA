@@ -186,8 +186,10 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
       await api.toggleFavorite(idVariedad);
       _cargarFavoritosBackend();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Error al actualizar favorito")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error al actualizar favorito")));
+      }
     }
   }
 
@@ -313,7 +315,6 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
     final int idVar = variedad['id'] ?? variedad['id_variedad'];
     final bool esFav = _favoritosIds.contains(idVar);
     final String? tipo = variedad['tipo'] ?? variedad['color'];
-    final bool isBlanca = tipo?.toLowerCase() == 'blanca';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -567,8 +568,8 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isBlanca
-            ? const Color(0xFF8B8000).withOpacity(0.8)
-            : const Color(0xFF800020).withOpacity(0.8),
+            ? const Color(0xFF8B8000).withValues(alpha: 0.8)
+            : const Color(0xFF800020).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -606,7 +607,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
         img = FileImage(File(path));
       } else {
         // Fallback: intentar cargarlo desde el backend si no parece ruta de archivo
-        final baseUrl = getBaseUrl();
+        final baseUrl = APIConfig.baseUrl;
         final fullUrl =
             path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
         img = NetworkImage(fullUrl);
@@ -717,7 +718,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 4,
                         offset: const Offset(0, 2))
                   ],

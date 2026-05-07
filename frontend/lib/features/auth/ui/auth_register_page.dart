@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vinas_mobile/core/api_config.dart';
 import 'package:vinas_mobile/features/home/ui/home_principal_page.dart';
-import 'auth_login_page.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -67,7 +66,7 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
           
           if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
             Position position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.medium
+              locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium)
             );
             request.fields['latitud'] = position.latitude.toString();
             request.fields['longitud'] = position.longitude.toString();
@@ -75,7 +74,7 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
         } catch (e) {
           debugPrint("Error al capturar ubicación en registro: $e");
         } finally {
-          setState(() => _isLocating = false);
+          if (mounted) setState(() => _isLocating = false);
         }
       }
 
@@ -116,6 +115,8 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
             await AuthSessionService.setUserId(userData["id"]);
           }
 
+          if (!mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Usuario creado e iniciado sesión correctamente")),
           );
@@ -125,6 +126,7 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
             MaterialPageRoute(builder: (_) => const HomePrincipalPage()),
           );
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Usuario creado, pero error al iniciar sesión automáticamente. Por favor, inicie sesión manualmente.")),
           );
@@ -138,7 +140,9 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
             message = errorData["detail"] ?? message;
           } catch (_) {}
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -249,7 +253,7 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
                   child: SwitchListTile(
                     title: Text("Compartir ubicación para el clima", style: TextStyle(color: _authMainColor, fontSize: 14, fontWeight: FontWeight.w500)),
                     value: _shareLocation,
-                    activeColor: _authMainColor,
+                    activeThumbColor: _authMainColor,
                     onChanged: (bool value) => setState(() => _shareLocation = value),
                     secondary: Icon(Icons.location_on_outlined, color: _authMainColor),
                   ),
@@ -284,7 +288,7 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
                   obscureText: true,
                 ),
                 const SizedBox(height: 30),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(

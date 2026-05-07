@@ -4,9 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:vinas_mobile/core/api_client.dart';
-import 'package:vinas_mobile/core/api_config.dart';
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 
@@ -47,18 +44,20 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
       }
     } catch (e) {
       // Revertir si falla
-      setState(() {
-        _isFavorito = !_isFavorito;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar favoritos')),
-      );
+      if (mounted) {
+        setState(() {
+          _isFavorito = !_isFavorito;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar favoritos')),
+        );
+      }
     }
   }
 
   // Función ROBUSTA para abrir URLs
   Future<void> _launchURL(String urlString) async {
-    print("--- INTENTANDO ABRIR LINK ---");
+    debugPrint("--- INTENTANDO ABRIR LINK ---");
     String urlLimpia = urlString.trim();
     // Si no empieza por http ni https, lo forzamos
     if (!urlLimpia.startsWith(RegExp(r'^https?://', caseSensitive: false))) {
@@ -206,7 +205,7 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: colorTema.withOpacity(0.1),
+                              color: colorTema.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: colorTema),
                             ),
@@ -282,8 +281,9 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
                             }
                           }
 
-                          if (datosParaMostrar.isEmpty)
+                          if (datosParaMostrar.isEmpty) {
                             return const SizedBox.shrink();
+                          }
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,7 +401,7 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
       // TODO: Adaptar a la estructura de lista cuando la veamos en los logs.
       // Por ahora intentamos convertirlo a Map si es posible o lo dejamos vacío
       // Ejemplo: si fuera [{'key': 'hoja', 'value': ...}]
-      print(
+      debugPrint(
           "Warning: Morfologia is a List, not a Map. UI update pending data inspection.");
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -478,7 +478,7 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -546,10 +546,11 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
       }
     }
 
-    if (path == null || path.isEmpty)
+    if (path == null || path.isEmpty) {
       return const Center(
           child:
               Icon(Icons.image_not_supported, color: Colors.white, size: 50));
+    }
 
     ImageProvider imgProvider;
     if (variedad['es_local'] == true) {
@@ -573,7 +574,7 @@ class _BibliotecaVariedadDetallePageState extends ConsumerState<BibliotecaVaried
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: Colors.black.withOpacity(0.3), // Un poco de oscurecimiento
+            color: Colors.black.withValues(alpha: 0.3), // Un poco de oscurecimiento
           ),
         ),
 

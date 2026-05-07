@@ -135,14 +135,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
       await _updateAddressDisplay(_lat!, _lon!);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ubicación obtenida correctamente')),
-      );
-
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ubicación obtenida correctamente')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al geolocalizar: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al geolocalizar: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
@@ -384,7 +387,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
             if (_isLocating || _isSaving)
               Container(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 child: const Center(
                   child: CircularProgressIndicator(
                     color: Color(0xFF142018),

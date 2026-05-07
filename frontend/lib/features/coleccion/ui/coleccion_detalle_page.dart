@@ -3,9 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
 import 'dart:ui';
-import 'package:vinas_mobile/core/api_client.dart';
-import 'package:vinas_mobile/core/api_config.dart';
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
@@ -276,7 +274,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                 const SizedBox(width: 10),
                 CircleAvatar(
                   backgroundColor:
-                      colorTema.withOpacity(0.8), // Destacar guardar
+                      colorTema.withValues(alpha: 0.8), // Destacar guardar
                   child: IconButton(
                     icon: _isUpdating
                         ? const SizedBox(
@@ -381,7 +379,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: colorTema.withOpacity(0.1),
+                                  color: colorTema.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: colorTema),
                                 ),
@@ -447,7 +445,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                                     boxShadow: isActive
                                         ? [
                                             BoxShadow(
-                                                color: colorTema.withOpacity(0.2),
+                                                color: colorTema.withValues(alpha: 0.2),
                                                 blurRadius: 8)
                                           ]
                                         : [],
@@ -551,7 +549,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                             ),
                             Switch(
                               value: _esPublica,
-                              activeColor: colorTema,
+                              activeThumbColor: colorTema,
                               onChanged: (val) {
                                 setState(() => _esPublica = val);
                               },
@@ -589,7 +587,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                             border: Border.all(color: Colors.grey.shade200),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4))
                             ]),
@@ -635,7 +633,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withValues(alpha: 0.8),
                                       borderRadius: BorderRadius.circular(20)),
                                   child: const Text(
                                       "Toca el mapa para corregir la posición",
@@ -654,7 +652,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.blueGrey.shade50.withOpacity(0.5),
+                            color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: Colors.blueGrey.shade100),
                           ),
@@ -739,7 +737,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
           ),
         ),
 
@@ -789,7 +787,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white10),
               ),

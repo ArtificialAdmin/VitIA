@@ -66,6 +66,8 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
           print("Error al recuperar perfil tras login: $e");
         }
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Inicio de sesión exitoso")),
         );
@@ -188,7 +190,7 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(

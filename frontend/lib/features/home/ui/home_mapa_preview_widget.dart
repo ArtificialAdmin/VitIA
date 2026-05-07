@@ -356,7 +356,7 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
@@ -384,7 +384,7 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
                         ),

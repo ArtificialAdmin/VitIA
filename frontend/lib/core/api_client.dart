@@ -9,7 +9,6 @@ import 'package:vinas_mobile/features/experto/services/experto_service.dart';
 import 'package:vinas_mobile/features/perfil/services/perfil_service.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/core/models/prediction_model.dart';
-import 'package:vinas_mobile/core/models/coleccion_model.dart';
 
 class ApiClient {
   final Dio _dio;

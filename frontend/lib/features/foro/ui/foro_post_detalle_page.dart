@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vinas_mobile/core/api_client.dart';
-import 'package:vinas_mobile/core/api_config.dart';
+
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/features/foro/providers/foro_provider.dart';
 import 'package:vinas_mobile/core/providers.dart';
@@ -67,9 +66,10 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
       await _cargarComentarios(); // Recargar lista local
       ref.invalidate(foroProvider); // Forzar actualización del Feed global
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Error al publicar comentario")));
+      }
     } finally {
       if (mounted) setState(() => _isPostingComment = false);
     }
@@ -202,9 +202,9 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
       await ref.read(apiProvider).deleteComentario(commentId);
       await _cargarComentarios(); // Recargamos localmente
       ref.invalidate(foroProvider); // Forzar actualización del Feed
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Comentario eliminado")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Comentario eliminado")));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error al eliminar comentario")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error al eliminar comentario")));
     }
   }
 
@@ -561,8 +561,9 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
       if (diferencia.inMinutes < 60) return "hace ${diferencia.inMinutes}m";
       if (diferencia.inHours < 24) return "hace ${diferencia.inHours}h";
       if (diferencia.inDays < 7) return "hace ${diferencia.inDays}d";
-      if (diferencia.inDays < 30)
+      if (diferencia.inDays < 30) {
         return "hace ${(diferencia.inDays / 7).floor()} sem";
+      }
       return "${fecha.day}/${fecha.month}/${fecha.year}";
     } catch (e) {
       return "";
