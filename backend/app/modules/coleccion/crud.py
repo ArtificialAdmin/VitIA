@@ -11,12 +11,34 @@ def create_coleccion_item(db: Session, item: schemas.ColeccionCreate, id_usuario
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+    
+    if getattr(db_item, "solicita_validacion_experto", False) and getattr(db_item, "es_premium", False):
+        db_validacion = models.ValidacionExperto(
+            id_coleccion=db_item.id_coleccion
+        )
+        db.add(db_validacion)
+        db.commit()
+        
+        # Enviar notificación PUSH a los expertos
+        from app.services.push_notifications import send_push_notification
+        expertos = db.query(models.Usuario).filter(models.Usuario.rol == "experto").all()
+        tokens = [e.fcm_token for e in expertos if e.fcm_token]
+        if tokens:
+            send_push_notification(
+                tokens=tokens,
+                title="Nueva Validación Pendiente",
+                body="Un usuario ha solicitado validación de una imagen premium.",
+                data={"id_coleccion": str(db_item.id_coleccion)}
+            )
+        
     return db_item
 
 def get_user_coleccion(db: Session, id_usuario: int, skip: int = 0, limit: int = 100):
     """Obtiene una lista paginada de la colección de un usuario."""
     return db.query(models.Coleccion)\
+             .options(joinedload(models.Coleccion.validacion))\
              .filter(models.Coleccion.id_usuario == id_usuario)\
+             .order_by(models.Coleccion.fecha_captura.desc())\
              .offset(skip)\
              .limit(limit)\
              .all()

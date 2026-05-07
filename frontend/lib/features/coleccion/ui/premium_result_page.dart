@@ -33,6 +33,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
   late PredictionModel _selectedPrediction;
   int _coverIndex = 0;
   bool _isSaving = false;
+  bool _solicitaValidacionExperto = false;
   final TextEditingController _notesController = TextEditingController();
 
   @override
@@ -54,6 +55,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
         notas: _notesController.text,
         lat: widget.lat,
         lon: widget.lon,
+        solicitaValidacionExperto: _solicitaValidacionExperto,
       );
 
       if (mounted) {
@@ -425,7 +427,30 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
               ),
             ),
 
-            // 6. Action Buttons (Save or Discard)
+            // 6. Validación Experto Switch
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: SwitchListTile(
+                title: const Text(
+                  'Solicitar validación de experto',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                subtitle: const Text(
+                  'Un enólogo experto revisará las imágenes y confirmará si la variedad detectada es correcta.',
+                  style: TextStyle(fontSize: 13),
+                ),
+                value: _solicitaValidacionExperto,
+                activeColor: const Color(0xFFD4AF37),
+                onChanged: (bool value) {
+                  setState(() {
+                    _solicitaValidacionExperto = value;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+
+            // 7. Action Buttons (Save or Discard)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               child: Column(

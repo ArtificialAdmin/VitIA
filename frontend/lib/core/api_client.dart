@@ -5,6 +5,7 @@ import 'package:vinas_mobile/features/auth/services/auth_service.dart';
 import 'package:vinas_mobile/features/foro/services/foro_service.dart';
 import 'package:vinas_mobile/features/coleccion/services/coleccion_service.dart';
 import 'package:vinas_mobile/features/biblioteca/services/biblioteca_service.dart';
+import 'package:vinas_mobile/features/experto/services/experto_service.dart';
 import 'package:vinas_mobile/features/perfil/services/perfil_service.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/core/models/prediction_model.dart';
@@ -19,6 +20,7 @@ class ApiClient {
   late final ColeccionService _coleccion;
   late final BibliotecaService _biblioteca;
   late final PerfilService _perfil;
+  late final ExpertoService _experto;
 
   ApiClient(String baseUrl) : _dio = Dio(BaseOptions(baseUrl: baseUrl)) {
     _dio.interceptors.add(
@@ -45,6 +47,7 @@ class ApiClient {
     _coleccion = ColeccionService(_dio);
     _biblioteca = BibliotecaService(_dio);
     _perfil = PerfilService(_dio);
+    _experto = ExpertoService(_dio);
   }
 
   // GETTERS for DataSources
@@ -53,6 +56,7 @@ class ApiClient {
   ColeccionService get coleccionDataSource => _coleccion;
   BibliotecaService get bibliotecaDataSource => _biblioteca;
   PerfilService get perfilDataSource => _perfil;
+  ExpertoService get expertoDataSource => _experto;
   Dio get dioInstance => _dio;
 
   void setToken(String token) {
@@ -95,6 +99,7 @@ class ApiClient {
     bool esPublica = true,
     List<XFile>? premiumFiles,
     String? analisisIA,
+    bool solicitaValidacionExperto = false,
   }) =>
       _coleccion.saveToCollection(
         imageFile: imageFile,
@@ -105,6 +110,7 @@ class ApiClient {
         esPublica: esPublica,
         premiumFiles: premiumFiles,
         analisisIA: analisisIA,
+        solicitaValidacionExperto: solicitaValidacionExperto,
       );
   Future<List<dynamic>> getCollection() => _coleccion.getCollection();
   Future<List<dynamic>> getUserCollection() => _coleccion.getCollection(); // Legacy support

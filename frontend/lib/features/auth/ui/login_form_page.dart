@@ -9,6 +9,7 @@ import 'package:vinas_mobile/core/api_config.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/home/ui/home_principal_page.dart';
+import 'package:vinas_mobile/features/experto/ui/validaciones_page.dart';
 import 'auth_register_page.dart';
 
 class LoginFormPage extends ConsumerStatefulWidget {
@@ -52,6 +53,7 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
         ref.read(sessionTokenProvider.notifier).state = token;
 
         // 3. Obtener el perfil completo (incluyendo id_usuario) para reactividad
+        String rol = "usuario";
         try {
           final userInfo = await ref.read(apiProvider).getMe();
           final userId = userInfo['id_usuario'];
@@ -59,6 +61,7 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
             await AuthSessionService.setUserId(userId);
             ref.read(userIdProvider.notifier).state = userId;
           }
+          rol = userInfo['rol'] ?? "usuario";
         } catch (e) {
           print("Error al recuperar perfil tras login: $e");
         }
@@ -67,11 +70,19 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
           const SnackBar(content: Text("Inicio de sesión exitoso")),
         );
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePrincipalPage()),
-          (route) => false,
-        );
+        if (rol == 'experto' || rol == 'admin') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const ValidacionesPage()),
+            (route) => false,
+          );
+        } else {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePrincipalPage()),
+            (route) => false,
+          );
+        }
       } else {
         String message = "Credenciales incorrectas o error de servidor.";
         if (response.body.isNotEmpty) {

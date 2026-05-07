@@ -46,9 +46,25 @@ web/.dart_tool/
 .idea/
 *.iml
 
-# ===== SECRETS =====
+# ===== SECRETS & ENV =====
 .env
 *.env
+.env.*
 alembic.ini
+backend/.env
+frontend/.env
 
+# ===== OS & TEMPS =====
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# ===== CACHES =====
 .hypothesis/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/

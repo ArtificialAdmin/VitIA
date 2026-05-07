@@ -13,6 +13,7 @@ class UsuarioBase(BaseModel):
     longitud: Optional[float] = None
     tutorial_superado: bool = False
     path_foto_perfil: Optional[str] = None
+    rol: str = "usuario"
 
 class UsuarioCreate(UsuarioBase):
     password: str

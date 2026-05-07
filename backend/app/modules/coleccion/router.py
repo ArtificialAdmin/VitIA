@@ -37,6 +37,7 @@ async def create_item(
     latitud: Optional[float] = Form(None),
     longitud: Optional[float] = Form(None),
     es_publica: bool = Form(True),
+    solicita_validacion: bool = Form(False),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -93,7 +94,8 @@ async def create_item(
             latitud=latitud,
             longitud=longitud,
             es_publica=es_publica,
-            es_premium=True if premium_urls else False
+            es_premium=True if premium_urls else False,
+            solicita_validacion_experto=solicita_validacion
         )
         
         return crud.create_coleccion_item(db=db, item=new_item, id_usuario=current_user.id_usuario)

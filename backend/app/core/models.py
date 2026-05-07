@@ -46,6 +46,8 @@ class Usuario(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     es_premium = Column(Boolean, default=False)
+    rol = Column(String(50), default="usuario") # "usuario", "experto", "admin"
+    fcm_token = Column(String(255), nullable=True) # Para notificaciones push
     latitud = Column(Float, nullable=True)
     longitud = Column(Float, nullable=True)
     tutorial_superado = Column(Boolean, default=False)
@@ -84,9 +86,43 @@ class Coleccion(Base):
     # Soporte Premium
     fotos_premium = Column(JSONB, nullable=True) # Lista de URLs
     analisis_ia = Column(Text, nullable=True) # Descripción breve de la IA
+    solicita_validacion_experto = Column(Boolean, default=False)
 
     propietario = relationship("Usuario", back_populates="coleccion")
     variedad = relationship("Variedad", back_populates="items_coleccion")
+    validacion = relationship("ValidacionExperto", back_populates="coleccion", uselist=False, cascade="all, delete-orphan")
+
+class ValidacionExperto(Base):
+    __tablename__ = "ValidacionesExperto"
+    id_validacion = Column(Integer, primary_key=True, index=True)
+    id_coleccion = Column(Integer, ForeignKey("Coleccion.id_coleccion", ondelete="CASCADE"), nullable=False, unique=True)
+    id_experto = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="SET NULL"), nullable=True)
+    
+    solicitada_en = Column(DateTime(timezone=True), server_default=func.now())
+    validada_en = Column(DateTime(timezone=True), nullable=True)
+    
+    es_correcta = Column(Boolean, nullable=True)
+    feedback_experto = Column(Text, nullable=True)
+    evaluacion_imagenes = Column(JSONB, nullable=True) # ej: [{"url": "...", "valida": True}]
+    estado = Column(String(50), default="pendiente") # "pendiente", "validada", "rechazada"
+
+    coleccion = relationship("Coleccion", back_populates="validacion")
+    experto = relationship("Usuario", foreign_keys=[id_experto])
+    anotaciones = relationship("AnotacionImagen", back_populates="validacion", cascade="all, delete-orphan")
+
+class AnotacionImagen(Base):
+    __tablename__ = "AnotacionesImagenes"
+    id_anotacion = Column(Integer, primary_key=True, index=True)
+    url_imagen = Column(String(512), nullable=False)
+    es_buena = Column(Boolean, nullable=False)
+    
+    id_validacion = Column(Integer, ForeignKey("ValidacionesExperto.id_validacion", ondelete="CASCADE"), nullable=False)
+    id_variedad = Column(Integer, ForeignKey("Variedades.id_variedad", ondelete="CASCADE"), nullable=False)
+    
+    fecha_anotacion = Column(DateTime(timezone=True), server_default=func.now())
+
+    validacion = relationship("ValidacionExperto", back_populates="anotaciones")
+    variedad = relationship("Variedad")
 
 class Publicacion(Base):
     __tablename__ = "Publicaciones"

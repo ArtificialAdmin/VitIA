@@ -146,6 +146,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
             'fotos_premium': item['fotos_premium'],
             'analisis_ia': item['analisis_ia'],
             'es_premium': item['es_premium'] ?? false,
+            'estado_validacion': item['validacion'] != null ? item['validacion']['estado'] : null,
             'variedad_original': variedadData,
           };
         }).toList();
@@ -482,6 +483,31 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                             color: Colors.grey,
                             fontSize: 12,
                           ),
+                        ),
+                      ],
+                      if (item['estado_validacion'] != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              item['estado_validacion'] == 'validada' ? Icons.verified : 
+                              item['estado_validacion'] == 'rechazada' ? Icons.cancel : Icons.pending,
+                              size: 16,
+                              color: item['estado_validacion'] == 'validada' ? Colors.green : 
+                                     item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item['estado_validacion'] == 'validada' ? "Validado por experto" :
+                              item['estado_validacion'] == 'rechazada' ? "Rechazado por experto" : "Revisión pendiente",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: item['estado_validacion'] == 'validada' ? Colors.green : 
+                                       item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
+                              ),
+                            )
+                          ],
                         ),
                       ],
                     ],

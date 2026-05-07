@@ -8,6 +8,7 @@ import 'edit_profile_page.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/features/experto/ui/validaciones_page.dart';
 
 class PerfilPrincipalPage extends ConsumerStatefulWidget {
   const PerfilPrincipalPage({super.key});
@@ -20,6 +21,7 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
   String _nombreUser = "";
   String _ubicacionUser = "";
   String? _userPhotoUrl; // Variable para foto
+  String _rolUser = "usuario"; // Nuevo estado para el rol
   bool _profileUpdated = false;
   bool _isLoading = true; // <--- Nuevo estado de carga
 
@@ -36,6 +38,7 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
         setState(() {
           _nombreUser = "${userData['nombre']} ${userData['apellidos']}";
           _userPhotoUrl = userData['path_foto_perfil'];
+          _rolUser = userData['rol'] ?? "usuario";
           
           double? lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
           double? lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
@@ -224,6 +227,22 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
                 }
               },
             ),
+
+            if (_rolUser == 'experto' || _rolUser == 'admin') ...[
+              const SizedBox(height: 16),
+              _buildProfileCard(
+                title: "Validaciones Pendientes",
+                subtitle: "Revisa las imágenes de la IA",
+                textColor: const Color(0xFFD4AF37),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ValidacionesPage()),
+                  );
+                },
+              ),
+            ],
 
             const SizedBox(height: 20),
 

@@ -17,6 +17,7 @@ class ColeccionService {
     bool esPublica = true,
     List<XFile>? premiumFiles,
     String? analisisIA,
+    bool solicitaValidacionExperto = false,
   }) async {
     try {
       final bytes = await imageFile.readAsBytes();
@@ -28,6 +29,7 @@ class ColeccionService {
         if (lat != null) MapEntry("latitud", lat.toString()),
         if (lon != null) MapEntry("longitud", lon.toString()),
         MapEntry("es_publica", esPublica.toString()),
+        MapEntry("solicita_validacion", solicitaValidacionExperto.toString()),
         if (analisisIA != null) MapEntry("analisis_ia", analisisIA),
       ]);
       
