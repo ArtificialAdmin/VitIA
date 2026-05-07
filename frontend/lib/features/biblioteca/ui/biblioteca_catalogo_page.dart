@@ -485,31 +485,6 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
                           ),
                         ),
                       ],
-                      if (item['estado_validacion'] != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              item['estado_validacion'] == 'validada' ? Icons.verified : 
-                              item['estado_validacion'] == 'rechazada' ? Icons.cancel : Icons.pending,
-                              size: 16,
-                              color: item['estado_validacion'] == 'validada' ? Colors.green : 
-                                     item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              item['estado_validacion'] == 'validada' ? "Validado por experto" :
-                              item['estado_validacion'] == 'rechazada' ? "Rechazado por experto" : "Revisión pendiente",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: item['estado_validacion'] == 'validada' ? Colors.green : 
-                                       item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
-                              ),
-                            )
-                          ],
-                        ),
-                      ],
                     ],
                   ),
                 ),

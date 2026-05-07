@@ -233,7 +233,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
           Positioned.fill(
             child: Container(
               color: Colors.black,
-              child: _itemActual['es_premium'] == true && (_itemActual['fotos_premium'] as List).isNotEmpty
+              child: _itemActual['es_premium'] == true && _itemActual['fotos_premium'] != null && (_itemActual['fotos_premium'] as List).isNotEmpty
                   ? _buildCarousel(_itemActual['fotos_premium'])
                   : _buildImagen(_itemActual),
             ),
@@ -411,6 +411,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
 
                       // --- MINI CAROUSEL (Inside the white sheet) ---
                       if (_itemActual['es_premium'] == true &&
+                          _itemActual['fotos_premium'] != null &&
                           (_itemActual['fotos_premium'] as List).isNotEmpty) ...[
                         _buildSectionTitle("Capturas Detalladas"),
                         const SizedBox(height: 12),
@@ -680,6 +681,48 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                                 _itemActual['analisis_ia'],
                                 style: TextStyle(
                                   color: Colors.blueGrey.shade800,
+                                  fontSize: 14,
+                                  height: 1.5,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // SECCIÓN FEEDBACK EXPERTO
+                      if (_itemActual['validacion'] != null && _itemActual['validacion']['feedback_experto'] != null && _itemActual['validacion']['feedback_experto'].toString().isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.green.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.verified, color: Colors.green.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Comentario del Experto",
+                                    style: TextStyle(
+                                      color: Colors.green.shade900,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _itemActual['validacion']['feedback_experto'],
+                                style: TextStyle(
+                                  color: Colors.green.shade900,
                                   fontSize: 14,
                                   height: 1.5,
                                   fontStyle: FontStyle.italic,

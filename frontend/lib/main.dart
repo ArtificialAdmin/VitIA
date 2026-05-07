@@ -4,10 +4,17 @@ import 'package:vinas_mobile/features/home/ui/home_principal_page.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase init failed (maybe missing google-services.json): $e");
+  }
 
   // Cargamos la sesión antes de iniciar la UI
   final bool hasSession = await AuthSessionService.loadSession();

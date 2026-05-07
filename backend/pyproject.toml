@@ -22,6 +22,7 @@ ultralytics = "^8.0.0"
 python-multipart = "^0.0.9"
 pillow = "^10.0.0"
 alembic = "^1.13.0"
+firebase-admin = "^6.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

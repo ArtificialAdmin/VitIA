@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:geocoding/geocoding.dart';
@@ -35,6 +36,8 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
   double? _lat;
   double? _lon;
   String? _userPhotoUrl; // Nueva variable para la foto
+  int _pendingCount = 0; // Nueva variable para el contador
+  String _rolUser = "usuario";
 
   // CAMBIO: Convertimos _screens en un método get para poder acceder a setState y lógica de instancia
   List<Widget> get _screens => [
@@ -44,6 +47,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
           lat: _lat,
           lon: _lon,
           userPhotoUrl: _userPhotoUrl, // Pasamos la foto
+          badgeCount: _pendingCount, // Pasamos el contador
           onProfileTap: () async {
             final result = await Navigator.push(
               context,
@@ -52,6 +56,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
             if (result == true) {
               _checkTutorialStatus();
             }
+            _fetchPendingCountIfExpert();
           },
         ),
         const ColeccionCapturaPage(),
@@ -114,8 +119,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
               ? (userData['longitud'] as num).toDouble()
               : null;
           _userPhotoUrl = userData['path_foto_perfil'];
-          // _tutorialSuperado is not used, but we keep the logic update if needed later
-          // _tutorialSuperado = tutorialSuperado || _hasShownTutorialSession;
+          _rolUser = userData['rol'] ?? "usuario";
         });
 
         if (_lat != null && _lon != null) {
@@ -123,6 +127,9 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
         } else {
           setState(() => _userLocation = "");
         }
+        
+        _fetchPendingCountIfExpert();
+        _registerPushNotificationsIfExpert();
       }
 
       if (!tutorialSuperado && !_hasShownTutorialSession) {
@@ -133,14 +140,43 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
       }
     } on DioException catch (e) {
       debugPrint("Error al cargar datos iniciales: ${e.message}");
-      // Si es 401, el interceptor ya disparará _handleTokenExpired
-      if (e.response?.statusCode != 401) {
-        // if (mounted) setState(() => _tutorialSuperado = true);
-      }
     } catch (e) {
       debugPrint("Error general al cargar datos iniciales: $e");
-      // if (mounted) setState(() => _tutorialSuperado = true);
     } finally {}
+  }
+
+  Future<void> _registerPushNotificationsIfExpert() async {
+    if (_rolUser == 'experto' || _rolUser == 'admin') {
+      try {
+        FirebaseMessaging messaging = FirebaseMessaging.instance;
+        NotificationSettings settings = await messaging.requestPermission();
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+          String? token = await messaging.getToken();
+          if (token != null) {
+            await ref.read(apiProvider).registerFcmToken(token);
+            debugPrint("FCM Token registrado: $token");
+          }
+        }
+      } catch (e) {
+        debugPrint("Error registering FCM token: $e");
+      }
+    }
+  }
+
+
+  Future<void> _fetchPendingCountIfExpert() async {
+    if (_rolUser == 'experto' || _rolUser == 'admin') {
+      try {
+        final count = await ref.read(apiProvider).getValidacionesPendientesCount();
+        if (mounted) {
+          setState(() {
+            _pendingCount = count;
+          });
+        }
+      } catch (e) {
+        debugPrint("Error fetching pending count: $e");
+      }
+    }
   }
 
   Future<void> _updateAddressDisplay(double lat, double lon) async {

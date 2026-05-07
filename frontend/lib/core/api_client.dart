@@ -73,6 +73,7 @@ class ApiClient {
   
   // Auth
   Future<void> logout() => _auth.logout();
+  Future<void> registerFcmToken(String token) => _auth.registerFcmToken(token);
 
   // Foro
   Future<List<dynamic>> getPublicaciones() => _foro.getPublicaciones();
@@ -117,6 +118,7 @@ class ApiClient {
   Future<void> updateCollectionItem(int idColeccion, Map<String, dynamic> updates) => _coleccion.updateCollectionItem(idColeccion, updates);
   Future<void> deleteCollectionItem(int idColeccion) => _coleccion.deleteCollectionItem(idColeccion);
   Future<List<dynamic>> getColeccionesMapa({String modo = 'publico'}) => _coleccion.getColeccionesMapa(modo: modo);
+  Future<void> solicitarValidacion(int idColeccion) => _coleccion.solicitarValidacion(idColeccion);
 
   // Biblioteca / IA
   Future<List<dynamic>> getVariedades() => _biblioteca.getVariedades();
@@ -130,4 +132,7 @@ class ApiClient {
   Future<void> toggleFavorite(int idVariedad) => _perfil.toggleFavorite(idVariedad);
   Future<List<dynamic>> getFavorites() => _perfil.getFavorites();
   Future<void> markTutorialAsComplete() => _perfil.markTutorialAsComplete();
+
+  // Experto
+  Future<int> getValidacionesPendientesCount() => _experto.getValidacionesPendientesCount();
 }

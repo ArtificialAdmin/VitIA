@@ -1,0 +1,92 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vinas_mobile/core/providers.dart';
+import 'validacion_detalle_page.dart';
+
+class AnotacionDatasetPage extends ConsumerStatefulWidget {
+  const AnotacionDatasetPage({Key? key}) : super(key: key);
+
+  @override
+  ConsumerState<AnotacionDatasetPage> createState() => _AnotacionDatasetPageState();
+}
+
+class _AnotacionDatasetPageState extends ConsumerState<AnotacionDatasetPage> {
+  bool _isLoading = true;
+  List<dynamic> _colecciones = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final api = ref.read(apiProvider);
+      final colecciones = await api.expertoDataSource.getColeccionesDataset();
+      if (mounted) {
+        setState(() {
+          _colecciones = colecciones;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Anotar Dataset'),
+        backgroundColor: const Color(0xFF1E2623), // Un color distinto al de validaciones
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _colecciones.isEmpty
+              ? const Center(child: Text('El dataset está completamente anotado. ¡Buen trabajo!'))
+              : ListView.builder(
+                  itemCount: _colecciones.length,
+                  itemBuilder: (context, index) {
+                    final coleccion = _colecciones[index];
+                    final variedadInfo = coleccion['variedad'] != null ? coleccion['variedad']['nombre'] : 'Desconocida';
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      child: ListTile(
+                        leading: coleccion['path_foto_usuario'] != null && coleccion['path_foto_usuario'].toString().isNotEmpty
+                            ? CircleAvatar(backgroundImage: NetworkImage(coleccion['path_foto_usuario']))
+                            : const CircleAvatar(child: Icon(Icons.image)),
+                        title: Text('Variedad IA: $variedadInfo'),
+                        subtitle: Text('ID Colección: ${coleccion['id_coleccion']} | Tipo: ${coleccion['es_premium'] ? "Premium" : "Básica"}'),
+                        trailing: const Icon(Icons.arrow_forward_ios),
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ValidacionDetallePage(
+                                validacion: coleccion,
+                                isModoDataset: true,
+                              ),
+                            ),
+                          );
+                          if (result == true) {
+                            _loadData();
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+}

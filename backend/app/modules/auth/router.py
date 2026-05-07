@@ -131,6 +131,24 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/logout", status_code=status.HTTP_200_OK, summary="Cerrar sesión")
-def logout_user(current_user: models.Usuario = Depends(get_current_user)):
-    """Informa al servidor de un logout exitoso (estataless)."""
-    return {"msg": "Cierre de sesión exitoso. El token debe ser eliminado por el cliente."}
+def logout_user(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Informa al servidor de un logout exitoso y limpia el token FCM."""
+    current_user.fcm_token = None
+    db.add(current_user)
+    db.commit()
+    return {"msg": "Cierre de sesión exitoso. El token FCM ha sido eliminado."}
+
+@router.post("/fcm-token", summary="Registrar token de Firebase Cloud Messaging")
+def register_fcm_token(
+    fcm_token: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Guarda el token FCM del usuario en la base de datos para recibir notificaciones."""
+    current_user.fcm_token = fcm_token
+    db.add(current_user)
+    db.commit()
+    return {"msg": "Token FCM registrado exitosamente."}

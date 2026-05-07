@@ -15,6 +15,7 @@ class HomeInicioSeccion extends ConsumerStatefulWidget {
   final double? lon;
   final String? userPhotoUrl;
   final VoidCallback? onProfileTap;
+  final int badgeCount;
 
   const HomeInicioSeccion({
     super.key,
@@ -24,6 +25,7 @@ class HomeInicioSeccion extends ConsumerStatefulWidget {
     this.lon,
     this.userPhotoUrl,
     this.onProfileTap,
+    this.badgeCount = 0,
   });
 
   @override
@@ -121,6 +123,7 @@ class _InicioScreenState extends ConsumerState<HomeInicioSeccion> {
               ),
               userPhotoUrl: widget.userPhotoUrl, // Pasamos la URL
               onProfileTap: widget.onProfileTap,
+              badgeCount: widget.badgeCount,
             ),
 
             Expanded(

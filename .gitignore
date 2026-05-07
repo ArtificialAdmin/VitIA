@@ -68,3 +68,5 @@ Thumbs.db
 .ruff_cache/
 .coverage
 htmlcov/
+
+backend/firebase-adminsdk.json
