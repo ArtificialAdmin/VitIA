@@ -7,6 +7,7 @@ class VitiaHeader extends StatelessWidget {
   final Widget? actionIcon;
   final String? userPhotoUrl;
   final VoidCallback? onProfileTap;
+  final int badgeCount;
 
   const VitiaHeader({
     super.key,
@@ -15,6 +16,7 @@ class VitiaHeader extends StatelessWidget {
     this.actionIcon,
     this.userPhotoUrl,
     this.onProfileTap,
+    this.badgeCount = 0,
   });
 
   @override
@@ -79,15 +81,41 @@ class VitiaHeader extends StatelessWidget {
               else if (onProfileTap != null) // Mostrar avatar si hay callback
                 GestureDetector(
                   onTap: onProfileTap,
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey.shade200,
-                    backgroundImage: userPhotoUrl != null
-                        ? NetworkImage(userPhotoUrl!)
-                        : null,
-                    child: userPhotoUrl == null
-                        ? const Icon(Icons.person, color: Colors.grey)
-                        : null,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.grey.shade200,
+                        backgroundImage: userPhotoUrl != null
+                            ? NetworkImage(userPhotoUrl!)
+                            : null,
+                        child: userPhotoUrl == null
+                            ? const Icon(Icons.person, color: Colors.grey)
+                            : null,
+                      ),
+                      if (badgeCount > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              badgeCount > 99 ? '99+' : badgeCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
             ],

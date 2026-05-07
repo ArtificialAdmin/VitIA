@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1031391588624",
+    "project_id": "vitia-e6318",
+    "storage_bucket": "vitia-e6318.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031391588624:android:149f6356560d098f157595",
+        "android_client_info": {
+          "package_name": "com.example.vinas_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO1CBIbViqYaCqoG31pw_HnRmHU7Ycd5A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

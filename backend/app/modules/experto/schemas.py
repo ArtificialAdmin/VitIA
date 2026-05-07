@@ -10,7 +10,8 @@ class ValidacionExpertoBase(BaseModel):
     evaluacion_imagenes: Optional[List[Dict[str, Any]]] = None
 
 class ValidacionExpertoUpdate(ValidacionExpertoBase):
-    pass
+    id_variedad_correcta: Optional[int] = None
+    variedad_sugerida: Optional[str] = None
 
 class ValidacionExperto(ValidacionExpertoBase, BaseConfig):
     id_validacion: int

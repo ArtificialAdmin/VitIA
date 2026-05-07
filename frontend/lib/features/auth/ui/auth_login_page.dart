@@ -176,7 +176,7 @@ class _LoginPageState extends State<AuthLoginPage> {
 
                 // Indicador de estado
                 Text(
-                  "Conectado a: ${AuthSessionService.baseUrl?.isNotEmpty == true ? AuthSessionService.baseUrl : '192.168.0.105 (Default)'}",
+                  "Conectado a: ${AuthSessionService.baseUrl?.isNotEmpty == true ? AuthSessionService.baseUrl : '192.168.1.118 (Default)'}",
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),

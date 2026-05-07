@@ -9,6 +9,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/experto/ui/validaciones_page.dart';
+import 'package:vinas_mobile/features/experto/ui/anotacion_dataset_page.dart';
 
 class PerfilPrincipalPage extends ConsumerStatefulWidget {
   const PerfilPrincipalPage({super.key});
@@ -24,6 +25,7 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
   String _rolUser = "usuario"; // Nuevo estado para el rol
   bool _profileUpdated = false;
   bool _isLoading = true; // <--- Nuevo estado de carga
+  int _pendingCount = 0;
 
   @override
   void initState() {
@@ -49,6 +51,10 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
             _ubicacionUser = "Sin ubicación";
           }
         });
+        
+        if (_rolUser == 'experto' || _rolUser == 'admin') {
+          _fetchPendingCount();
+        }
       }
     } catch (_) {
     } finally {
@@ -57,6 +63,19 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _fetchPendingCount() async {
+    try {
+      final count = await ref.read(apiProvider).getValidacionesPendientesCount();
+      if (mounted) {
+        setState(() {
+          _pendingCount = count;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching pending count: $e");
     }
   }
 
@@ -124,7 +143,8 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
       required String subtitle,
       required Function() onTap,
       IconData? icon,
-      Color? textColor}) {
+      Color? textColor,
+      int badgeCount = 0}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
@@ -142,12 +162,30 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.ibmPlexSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textColor ?? Colors.black87),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.ibmPlexSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textColor ?? Colors.black87),
+                        ),
+                        if (badgeCount > 0) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              badgeCount > 99 ? "99+" : badgeCount.toString(),
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ]
+                      ],
                     ),
                     if (subtitle.isNotEmpty)
                       Padding(
@@ -234,12 +272,28 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
                 title: "Validaciones Pendientes",
                 subtitle: "Revisa las imágenes de la IA",
                 textColor: const Color(0xFFD4AF37),
-                onTap: () {
-                  Navigator.push(
+                badgeCount: _pendingCount,
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (_) => const ValidacionesPage()),
                   );
+                  _fetchPendingCount();
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildProfileCard(
+                title: "Anotar Dataset Completo",
+                subtitle: "Evalúa todas las imágenes del sistema",
+                textColor: const Color(0xFF1E2623),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AnotacionDatasetPage()),
+                  );
+                  _fetchPendingCount();
                 },
               ),
             ],

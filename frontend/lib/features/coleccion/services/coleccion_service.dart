@@ -87,4 +87,12 @@ class ColeccionService {
       rethrow;
     }
   }
+
+  Future<void> solicitarValidacion(int idColeccion) async {
+    try {
+      await _dio.post('/coleccion/$idColeccion/solicitar-validacion');
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

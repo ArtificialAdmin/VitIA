@@ -146,6 +146,21 @@ def update_item(
         raise HTTPException(status_code=404, detail="No encontrado")
     return crud.update_coleccion_item(db, db_item, item_update)
 
+@router.post("/{id_coleccion}/solicitar-validacion", response_model=schemas.Coleccion, summary="Solicitar validación de captura premium")
+def solicitar_validacion(
+    id_coleccion: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Solicita a un experto la validación de una foto premium que no se solicitó en su momento."""
+    db_item = crud.get_coleccion_item(db, id_coleccion, current_user.id_usuario)
+    if not db_item:
+        raise HTTPException(status_code=404, detail="No encontrado")
+    if not db_item.es_premium:
+        raise HTTPException(status_code=400, detail="Solo las capturas premium pueden solicitar validación de experto.")
+    
+    return crud.solicitar_validacion_item(db, db_item)
+
 @router.delete("/{id_coleccion}", summary="Eliminar item")
 def delete_item(
     id_coleccion: int,

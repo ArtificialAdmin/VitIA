@@ -80,3 +80,32 @@ def get_colecciones_mapa(db: Session, modo: str = "publico", id_usuario: int = N
         query = query.filter(models.Coleccion.es_publica == True)
         
     return query.order_by(models.Coleccion.fecha_captura.desc()).all()
+
+def solicitar_validacion_item(db: Session, db_item: models.Coleccion):
+    if not db_item.solicita_validacion_experto:
+        db_item.solicita_validacion_experto = True
+        
+        # Verificar si ya existe validación
+        existing_val = db.query(models.ValidacionExperto).filter(models.ValidacionExperto.id_coleccion == db_item.id_coleccion).first()
+        if not existing_val:
+            val = models.ValidacionExperto(id_coleccion=db_item.id_coleccion, estado="pendiente")
+            db.add(val)
+            
+            # Enviar notificación PUSH
+            try:
+                from app.services.push_notifications import send_push_notification
+                expertos = db.query(models.Usuario).filter(models.Usuario.rol == "experto").all()
+                tokens = [e.fcm_token for e in expertos if e.fcm_token]
+                if tokens:
+                    send_push_notification(
+                        tokens=tokens,
+                        title="Nueva Validación Pendiente",
+                        body="Un usuario ha solicitado revisión desde su colección.",
+                        data={"id_coleccion": str(db_item.id_coleccion)}
+                    )
+            except Exception as e:
+                pass # Ignorar error de push
+            
+        db.commit()
+        db.refresh(db_item)
+    return db_item

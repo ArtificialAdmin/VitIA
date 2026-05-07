@@ -13,4 +13,14 @@ class AuthService {
       rethrow;
     }
   }
+
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dio.post('/auth/fcm-token', data: FormData.fromMap({
+        'fcm_token': token
+      }));
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

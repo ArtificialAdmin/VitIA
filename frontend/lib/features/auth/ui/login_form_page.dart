@@ -72,19 +72,11 @@ class _LoginFormPageState extends ConsumerState<LoginFormPage> {
           const SnackBar(content: Text("Inicio de sesión exitoso")),
         );
 
-        if (rol == 'experto' || rol == 'admin') {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const ValidacionesPage()),
-            (route) => false,
-          );
-        } else {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePrincipalPage()),
-            (route) => false,
-          );
-        }
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePrincipalPage()),
+          (route) => false,
+        );
       } else {
         String message = "Credenciales incorrectas o error de servidor.";
         if (response.body.isNotEmpty) {

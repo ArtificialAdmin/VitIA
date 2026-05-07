@@ -105,6 +105,7 @@ class ValidacionExperto(Base):
     feedback_experto = Column(Text, nullable=True)
     evaluacion_imagenes = Column(JSONB, nullable=True) # ej: [{"url": "...", "valida": True}]
     estado = Column(String(50), default="pendiente") # "pendiente", "validada", "rechazada"
+    variedad_sugerida = Column(String(150), nullable=True)
 
     coleccion = relationship("Coleccion", back_populates="validacion")
     experto = relationship("Usuario", foreign_keys=[id_experto])

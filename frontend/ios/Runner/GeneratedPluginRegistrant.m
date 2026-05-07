@@ -12,6 +12,18 @@
 @import camera_avfoundation;
 #endif
 
+#if __has_include(<firebase_core/FLTFirebaseCorePlugin.h>)
+#import <firebase_core/FLTFirebaseCorePlugin.h>
+#else
+@import firebase_core;
+#endif
+
+#if __has_include(<firebase_messaging/FLTFirebaseMessagingPlugin.h>)
+#import <firebase_messaging/FLTFirebaseMessagingPlugin.h>
+#else
+@import firebase_messaging;
+#endif
+
 #if __has_include(<geocoding_ios/GeocodingPlugin.h>)
 #import <geocoding_ios/GeocodingPlugin.h>
 #else
@@ -70,6 +82,8 @@
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
   [CameraPlugin registerWithRegistrar:[registry registrarForPlugin:@"CameraPlugin"]];
+  [FLTFirebaseCorePlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseCorePlugin"]];
+  [FLTFirebaseMessagingPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTFirebaseMessagingPlugin"]];
   [GeocodingPlugin registerWithRegistrar:[registry registrarForPlugin:@"GeocodingPlugin"]];
   [GeolocatorPlugin registerWithRegistrar:[registry registrarForPlugin:@"GeolocatorPlugin"]];
   [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];

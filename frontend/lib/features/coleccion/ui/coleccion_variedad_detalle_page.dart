@@ -119,6 +119,10 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
               'latitud': item['latitud'],
               'longitud': item['longitud'],
               'es_local': false,
+              'es_premium': item['es_premium'] ?? false,
+              'estado_validacion': item['validacion'] != null ? item['validacion']['estado'] : null,
+              'feedback_experto': item['validacion'] != null ? item['validacion']['feedback_experto'] : null,
+              'validacion': item['validacion'],
               'variedad_original': vData,
             };
           })
@@ -397,21 +401,100 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                 ],
               ),
             ),
-            if (isHorizontal)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: colorTema)),
-                      child: Text((widget.varietyInfo['tipo'] ?? 'PERSONAL').toUpperCase(), style: TextStyle(color: colorTema, fontWeight: FontWeight.bold, fontSize: 10)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: colorTema)),
+                        child: Text((widget.varietyInfo['tipo'] ?? 'PERSONAL').toUpperCase(), style: TextStyle(color: colorTema, fontWeight: FontWeight.bold, fontSize: 10)),
+                      ),
+                      Text(fecha, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (item['estado_validacion'] != null)
+                    Row(
+                      children: [
+                        Icon(
+                          item['estado_validacion'] == 'validada' ? Icons.verified : 
+                          item['estado_validacion'] == 'rechazada' ? Icons.cancel : Icons.pending,
+                          size: 16, 
+                          color: item['estado_validacion'] == 'validada' ? Colors.green : 
+                                 item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          item['estado_validacion'] == 'validada' ? "Validado por experto" :
+                          item['estado_validacion'] == 'rechazada' ? "Rechazado" : "Pendiente",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: item['estado_validacion'] == 'validada' ? Colors.green : 
+                                   item['estado_validacion'] == 'rechazada' ? Colors.red : Colors.orange,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(fecha, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-                  ],
-                ),
-              )
+                  if (item['feedback_experto'] != null && item['feedback_experto'].toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blueGrey.shade100),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.comment, size: 14, color: Colors.blueGrey.shade600),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                "Experto: ${item['feedback_experto']}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blueGrey.shade800,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (item['estado_validacion'] == null && item['es_premium'] == true)
+                    InkWell(
+                      onTap: () async {
+                        try {
+                          await ref.read(apiProvider).solicitarValidacion(item['id']);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Validación solicitada correctamente')));
+                          _reloadCaptures();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar validación')));
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.send, size: 16, color: Colors.blue),
+                          const SizedBox(width: 4),
+                          const Text(
+                            "Solicitar Validación",
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            )
           ],
         ),
       ),
