@@ -147,6 +147,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
             'analisis_ia': item['analisis_ia'],
             'es_premium': item['es_premium'] ?? false,
             'estado_validacion': item['validacion'] != null ? item['validacion']['estado'] : null,
+            'validacion': item['validacion'],
             'variedad_original': variedadData,
           };
         }).toList();

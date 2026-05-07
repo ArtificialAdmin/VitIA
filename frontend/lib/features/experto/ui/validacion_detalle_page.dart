@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/core/api_config.dart';
 
 class ValidacionDetallePage extends ConsumerStatefulWidget {
   final dynamic validacion; // Puede ser ValidacionExperto o Coleccion
@@ -223,12 +224,19 @@ class _ValidacionDetallePageState extends ConsumerState<ValidacionDetallePage> {
               itemBuilder: (context, index) {
                 final url = _evaluacionImagenes.keys.elementAt(index);
                 final bool? val = _evaluacionImagenes[url];
+                
+                String displayUrl = url;
+                if (!displayUrl.startsWith('http')) {
+                  final baseUrl = getBaseUrl();
+                  displayUrl = displayUrl.startsWith('/') ? "$baseUrl$displayUrl" : "$baseUrl/$displayUrl";
+                }
+
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
                       children: [
-                        Image.network(url, height: 150, width: double.infinity, fit: BoxFit.cover),
+                        Image.network(displayUrl, height: 150, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, s) => Container(height: 150, color: Colors.grey[200], child: const Icon(Icons.broken_image, size: 50, color: Colors.grey))),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [

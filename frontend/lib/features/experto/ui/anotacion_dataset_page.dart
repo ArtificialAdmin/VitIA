@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/core/api_config.dart';
 import 'validacion_detalle_page.dart';
 
 class AnotacionDatasetPage extends ConsumerStatefulWidget {
@@ -60,11 +61,23 @@ class _AnotacionDatasetPageState extends ConsumerState<AnotacionDatasetPage> {
                   itemBuilder: (context, index) {
                     final coleccion = _colecciones[index];
                     final variedadInfo = coleccion['variedad'] != null ? coleccion['variedad']['nombre'] : 'Desconocida';
+                    
+                    String? path = coleccion['path_foto_usuario']?.toString();
+                    String imageUrl = '';
+                    if (path != null && path.isNotEmpty) {
+                      if (path.startsWith('http')) {
+                        imageUrl = path;
+                      } else {
+                        final baseUrl = getBaseUrl();
+                        imageUrl = path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
+                      }
+                    }
+
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: ListTile(
-                        leading: coleccion['path_foto_usuario'] != null && coleccion['path_foto_usuario'].toString().isNotEmpty
-                            ? CircleAvatar(backgroundImage: NetworkImage(coleccion['path_foto_usuario']))
+                        leading: imageUrl.isNotEmpty
+                            ? CircleAvatar(backgroundImage: NetworkImage(imageUrl))
                             : const CircleAvatar(child: Icon(Icons.image)),
                         title: Text('Variedad IA: $variedadInfo'),
                         subtitle: Text('ID Colección: ${coleccion['id_coleccion']} | Tipo: ${coleccion['es_premium'] ? "Premium" : "Básica"}'),

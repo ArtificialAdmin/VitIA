@@ -122,6 +122,7 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
               'es_premium': item['es_premium'] ?? false,
               'estado_validacion': item['validacion'] != null ? item['validacion']['estado'] : null,
               'feedback_experto': item['validacion'] != null ? item['validacion']['feedback_experto'] : null,
+              'validacion': item['validacion'],
               'variedad_original': vData,
             };
           })

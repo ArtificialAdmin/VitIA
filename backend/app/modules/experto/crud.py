@@ -82,7 +82,6 @@ def get_colecciones_sin_evaluar(db: Session, skip: int = 0, limit: int = 100):
                   (models.ValidacionExperto.id_validacion == None) | 
                   (models.ValidacionExperto.estado == "pendiente")
               )\
-              .distinct(models.Coleccion.id_coleccion)\
               .order_by(models.Coleccion.fecha_captura.desc())\
               .offset(skip)\
               .limit(limit)\
