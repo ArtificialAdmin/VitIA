@@ -8,10 +8,10 @@ class ValidacionDetallePage extends ConsumerStatefulWidget {
   final bool isModoDataset;
   
   const ValidacionDetallePage({
-    Key? key, 
+    super.key, 
     required this.validacion,
     this.isModoDataset = false,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ValidacionDetallePage> createState() => _ValidacionDetallePageState();
@@ -26,7 +26,7 @@ class _ValidacionDetallePageState extends ConsumerState<ValidacionDetallePage> {
   int? _idVariedadCorrecta;
   
   // Para autoanotación: mapa de url -> bool (true = buena, false = mala, null = no evaluada)
-  Map<String, bool?> _evaluacionImagenes = {};
+  final Map<String, bool?> _evaluacionImagenes = {};
 
   @override
   void initState() {
@@ -127,7 +127,6 @@ class _ValidacionDetallePageState extends ConsumerState<ValidacionDetallePage> {
   Widget build(BuildContext context) {
     final coleccion = widget.isModoDataset ? widget.validacion : widget.validacion['coleccion'];
     final variedadInfo = coleccion['variedad'] != null ? coleccion['variedad']['nombre'] : 'Desconocida';
-    final fotosPremium = coleccion['fotos_premium'] as List<dynamic>? ?? [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Evaluar Captura')),

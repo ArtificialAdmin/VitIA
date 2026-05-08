@@ -695,7 +695,7 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade50.withOpacity(0.5),
+                            color: Colors.green.shade50.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: Colors.green.shade200),
                           ),

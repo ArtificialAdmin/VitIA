@@ -1,10 +1,10 @@
-import 'dart:io';
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'custom_camera_page.dart'; // Import custom camera
 
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 
 // Usa localhost dinámico en web para evitar bloqueos CORS/PNA de Chrome
 // Mantiene la IP local para testeos en emulador o dispositivo físico

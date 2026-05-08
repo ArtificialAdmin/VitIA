@@ -398,7 +398,7 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
                        decoration: BoxDecoration(
                          color: Colors.white,
                          shape: BoxShape.circle,
-                         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                        ),
                        child: const Icon(Icons.arrow_back, color: Color(0xFF142018), size: 24),
                      ),
@@ -410,7 +410,7 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
-                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

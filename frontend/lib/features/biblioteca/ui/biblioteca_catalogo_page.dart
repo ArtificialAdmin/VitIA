@@ -40,7 +40,7 @@ class _BibliotecaCatalogoPageState extends ConsumerState<BibliotecaCatalogoPage>
 
   bool _isLoading = true;
   bool _showSearch = false;
-  String _currentFilterColor = 'all';
+  final String _currentFilterColor = 'all';
 
   @override
   void initState() {

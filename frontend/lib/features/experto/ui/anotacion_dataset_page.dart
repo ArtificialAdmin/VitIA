@@ -5,7 +5,7 @@ import 'package:vinas_mobile/core/api_config.dart';
 import 'validacion_detalle_page.dart';
 
 class AnotacionDatasetPage extends ConsumerStatefulWidget {
-  const AnotacionDatasetPage({Key? key}) : super(key: key);
+  const AnotacionDatasetPage({super.key});
 
   @override
   ConsumerState<AnotacionDatasetPage> createState() => _AnotacionDatasetPageState();

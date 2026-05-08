@@ -123,7 +123,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
       );
 
       if (mounted) {
@@ -332,7 +332,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               style: TextStyle(fontSize: 12),
                             ),
                             value: _shareLocation,
-                            activeColor: const Color(0xFF142018),
+                            activeThumbColor: const Color(0xFF142018),
                             secondary: const Icon(Icons.location_on_outlined, color: Color(0xFF142018)),
                             onChanged: (bool value) {
                               setState(() {

@@ -55,10 +55,11 @@ class _LoginPageState extends State<AuthLoginPage> {
                   final newUrl = urlCtrl.text.trim();
                   if (newUrl.isNotEmpty) {
                     await AuthSessionService.setBaseUrl(newUrl);
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Conectado a IP Local")));
                   }
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   setState(() {});
                 },

@@ -4,7 +4,7 @@ import 'package:vinas_mobile/core/providers.dart';
 import 'validacion_detalle_page.dart';
 
 class ValidacionesPage extends ConsumerStatefulWidget {
-  const ValidacionesPage({Key? key}) : super(key: key);
+  const ValidacionesPage({super.key});
 
   @override
   ConsumerState<ValidacionesPage> createState() => _ValidacionesPageState();

@@ -475,9 +475,11 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                       onTap: () async {
                         try {
                           await ref.read(apiProvider).solicitarValidacion(item['id']);
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Validación solicitada correctamente')));
                           _reloadCaptures();
                         } catch (e) {
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar validación')));
                         }
                       },

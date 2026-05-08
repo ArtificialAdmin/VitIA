@@ -220,7 +220,7 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
         );
 
     if (currentPost == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(child: Text("Publicación no encontrada")),
       );
     }
@@ -543,9 +543,7 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
           ),
         ),
         if (hijos.isNotEmpty)
-          ...hijos
-              .map((hijo) => _buildComentario(hijo, level: level + 1, parentName: autor))
-              .toList(),
+          ...hijos.map((hijo) => _buildComentario(hijo, level: level + 1, parentName: autor)),
       ],
     );
   }

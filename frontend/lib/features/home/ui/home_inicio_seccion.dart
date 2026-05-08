@@ -174,11 +174,7 @@ class _InicioScreenState extends ConsumerState<HomeInicioSeccion> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              (_displayLocation ??
-                                      (widget.location.isNotEmpty
-                                          ? widget.location
-                                          : "Sin ubicación definida")) +
-                                  ".",
+                              "${_displayLocation ?? (widget.location.isNotEmpty ? widget.location : "Sin ubicación definida")}.",
                               style: const TextStyle(
                                   fontSize: 16, color: Colors.black87),
                               overflow: TextOverflow.ellipsis,

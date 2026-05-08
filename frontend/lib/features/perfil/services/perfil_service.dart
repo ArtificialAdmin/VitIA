@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:http_parser/http_parser.dart';
 
 class PerfilService {

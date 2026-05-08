@@ -21,7 +21,7 @@ class TutorialPage extends ConsumerStatefulWidget {
 
 class _TutorialPageState extends ConsumerState<TutorialPage> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
+
   final int _numPages = 6; // Pantalla 0 (Intro) + 5 Guías (1 a 5)
 
   // Estados de carga
@@ -113,25 +113,29 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 50),
+            SizedBox(height: 50),
             // Título con fuente Lora simulada
-            const Text('Es tu primera vez\npor aquí?',
+            Text('Es tu primera vez\npor aquí?',
                 style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     height: 1.1,
                     fontFamily: 'Lora')),
-            const SizedBox(height: 15),
-            const Text(
+            SizedBox(height: 15),
+            Text(
                 'Vitia te ayuda a identificar variedades de viñas usando la cámara.'),
 
-            const Spacer(flex: 3),
+            Spacer(flex: 3),
 
-            const Text('¿Quieres aprender cómo funciona?',
-                style: TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 15),
-
-            const Spacer(flex: 1),
+            Text('¿Quieres aprender cómo funciona?',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF142018))),
+            SizedBox(height: 10),
+            Text(
+                'Te guiaremos en 5 pasos para obtener capturas de alta calidad.'),
+            Spacer(flex: 2),
           ],
         );
 
@@ -139,10 +143,10 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
         return Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const SizedBox(height: 30),
-            const Text('¡Empieza aquí!',
+            SizedBox(height: 30),
+            Text('¡Empieza aquí!',
                 style: TextStyle(fontWeight: FontWeight.normal, fontSize: 18)),
-            const Spacer(),
+            Spacer(),
             // 🖼️ Burbuja P1: (burbuja_p1.png)
             Center(
               child: Image.asset(
@@ -272,7 +276,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
 
             // 🖼️ Burbuja Final con el botón "Comenzar" DENTRO - CON INTERACCIÓN
             Center(
-              child: Container(
+              child: SizedBox(
                 width: 320,
                 height: 180,
                 child: Stack(
@@ -514,7 +518,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
     return PageView(
       controller: _pageController,
       physics: const NeverScrollableScrollPhysics(),
-      onPageChanged: (index) => setState(() => _currentPage = index),
+      onPageChanged: (index) {},
       children:
           List.generate(_numPages, (index) => _buildTutorialScreen(index)),
     );

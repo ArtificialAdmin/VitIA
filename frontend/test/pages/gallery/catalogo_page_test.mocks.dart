@@ -8,7 +8,6 @@ import 'dart:async' as _i3;
 import 'package:image_picker/image_picker.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:vinas_mobile/core/api_client.dart' as _i2;
-import 'package:vinas_mobile/core/models/coleccion_model.dart' as _i6;
 import 'package:vinas_mobile/core/models/prediction_model.dart' as _i4;
 
 // ignore_for_file: type=lint

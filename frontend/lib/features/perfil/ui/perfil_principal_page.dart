@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/features/auth/ui/auth_login_page.dart';
 import 'edit_profile_page.dart';
-import 'package:geocoding/geocoding.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/experto/ui/validaciones_page.dart';
@@ -20,7 +20,6 @@ class PerfilPrincipalPage extends ConsumerStatefulWidget {
 
 class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
   String _nombreUser = "";
-  String _ubicacionUser = "";
   String? _userPhotoUrl; // Variable para foto
   String _rolUser = "usuario"; // Nuevo estado para el rol
   bool _profileUpdated = false;
@@ -41,15 +40,6 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
           _nombreUser = "${userData['nombre']} ${userData['apellidos']}";
           _userPhotoUrl = userData['path_foto_perfil'];
           _rolUser = userData['rol'] ?? "usuario";
-          
-          double? lat = userData['latitud'] != null ? (userData['latitud'] as num).toDouble() : null;
-          double? lon = userData['longitud'] != null ? (userData['longitud'] as num).toDouble() : null;
-          
-          if (lat != null && lon != null) {
-            _updateAddressDisplay(lat, lon);
-          } else {
-            _ubicacionUser = "Sin ubicación";
-          }
         });
         
         if (_rolUser == 'experto' || _rolUser == 'admin') {
@@ -79,26 +69,6 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
     }
   }
 
-  Future<void> _updateAddressDisplay(double lat, double lon) async {
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        String address = "${place.locality}, ${place.administrativeArea}";
-        if (mounted) {
-          setState(() => _ubicacionUser = address);
-        }
-      } else {
-        if (mounted) {
-          setState(() => _ubicacionUser = "$lat, $lon");
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _ubicacionUser = "Ubicación detectada");
-      }
-    }
-  }
 
   void logout(BuildContext context) async {
     final bool? confirm = await showDialog<bool>(
@@ -130,6 +100,7 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
     if (confirm == true) {
       await ref.read(apiProvider).logout();
       await AuthSessionService.clearSession();
+      if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const AuthLoginPage()),
@@ -142,7 +113,6 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
       {required String title,
       required String subtitle,
       required Function() onTap,
-      IconData? icon,
       Color? textColor,
       int badgeCount = 0}) {
     return Padding(
@@ -234,10 +204,10 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
                 radius: 50,
                 backgroundImage:
                     _userPhotoUrl != null ? NetworkImage(_userPhotoUrl!) : null,
+                backgroundColor: Colors.grey.shade200,
                 child: _userPhotoUrl == null
                     ? const Icon(Icons.person, size: 50, color: Colors.grey)
                     : null,
-                backgroundColor: Colors.grey.shade200,
               ),
               const SizedBox(height: 15),
               Text(
