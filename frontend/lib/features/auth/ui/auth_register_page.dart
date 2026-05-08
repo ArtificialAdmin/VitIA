@@ -39,6 +39,11 @@ class _AuthRegisterPageState extends State<AuthRegisterPage> {
         setState(() {
           _pickedFile = picked;
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto seleccionada'), duration: Duration(seconds: 1)),
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error picking image: $e");

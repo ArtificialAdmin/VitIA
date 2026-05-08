@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 // Usa localhost dinámico en web para evitar bloqueos CORS/PNA de Chrome
 // Mantiene la IP local para testeos en emulador o dispositivo físico
 const String _localHostUrl =
-    kIsWeb ? 'http://127.0.0.1:8000' : 'http://192.168.1.118:8000';
+    kIsWeb ? 'http://127.0.0.1:8000' : 'http://192.168.0.105:8000';
 
 // Configuración de WeatherAPI
 const String weatherBaseUrl = 'http://api.weatherapi.com/v1';

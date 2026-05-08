@@ -58,6 +58,11 @@ class _ForoCrearPostPageState extends ConsumerState<ForoCrearPostPage> {
           _selectedImage = image;
           _imageBytes = bytes;
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Imagen seleccionada'), duration: Duration(seconds: 1)),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');

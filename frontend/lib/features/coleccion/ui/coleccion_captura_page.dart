@@ -57,6 +57,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   // States: 0 = Capture/Gallery, 1 = Analysis/Loading, 2 = Result
   int _uiState = 0;
   bool _isSaving = false;
+  bool _showFlash = false; // <--- NUEVO: Para el efecto visual de captura
 
   final List<XFile> _capturedPhotos = [];
   bool _isAdvancedMode = false;
@@ -315,6 +316,21 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
           );
         }
       }
+
+      // --- FEEDBACK VISUAL ---
+      if (mounted) {
+        setState(() => _showFlash = true);
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) setState(() => _showFlash = false);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Foto añadida"),
+            duration: Duration(milliseconds: 800),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint("Error taking photo: $e");
     }
@@ -332,6 +348,17 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
             _capturedPhotos.add(images.first);
           }
         });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(images.length > 1 
+                ? "${images.length} imágenes añadidas" 
+                : "Imagen añadida"),
+              duration: const Duration(milliseconds: 1500),
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint("Error picking image: $e");
@@ -715,6 +742,14 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                         ),
                       ),
                     ],
+
+                    // --- FLASH OVERLAY ---
+                    if (_showFlash)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
                   ],
                 ),
               ),
