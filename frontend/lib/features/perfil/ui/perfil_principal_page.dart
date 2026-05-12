@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vinas_mobile/shared/components/loading_indicator.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/features/auth/ui/auth_login_page.dart';
 import 'edit_profile_page.dart';
@@ -198,7 +199,7 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
         child: Column(
           children: [
             if (_isLoading)
-              const Center(child: CircularProgressIndicator())
+              const LoadingIndicator()
             else ...[
               CircleAvatar(
                 radius: 50,

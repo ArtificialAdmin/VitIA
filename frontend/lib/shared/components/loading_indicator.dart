@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:vinas_mobile/shared/widgets/vitia_loading.dart';
 
 class LoadingIndicator extends StatelessWidget {
-  const LoadingIndicator({super.key});
+  final String? label;
+  const LoadingIndicator({super.key, this.label});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return Center(child: VitiaLoading(label: label));
   }
 }

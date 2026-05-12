@@ -1,10 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-
-// Asegúrate de que estos imports sean correctos
-
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 
 class TutorialPage extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
@@ -28,8 +26,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
   bool _isCompleting = false;
 
   // --- COLORES AJUSTADOS A FIGMA ---
-  final Color _mainColor =
-      const Color(0xFF8B9E3A); // Verde Musgo (Usado en el botón de la P0)
+  final Color _mainColor = AppColors.verdeVitIA; // Verde VitIA (Usado en el botón de la P0)
 
   // El color oscuro de la barra ya no es necesario aquí.
 
@@ -131,7 +128,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF142018))),
+                    color: AppColors.negroVitIA)),
             SizedBox(height: 10),
             Text(
                 'Te guiaremos en 5 pasos para obtener capturas de alta calidad.'),
@@ -336,7 +333,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFCFBF6),
+      backgroundColor: AppColors.grisClaro1VitIA,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -465,11 +462,11 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF142018), // Mismo color que HomePrincipalPage
+          color: AppColors.negroVitIA, // Mismo color que HomePrincipalPage
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF142018).withValues(alpha: 0.5),
+              color: AppColors.negroVitIA.withValues(alpha: 0.5),
               spreadRadius: 2,
               blurRadius: 10,
               offset: const Offset(0, 5),
@@ -507,7 +504,7 @@ class _TutorialPageState extends ConsumerState<TutorialPage> {
         width: 24,
         height: 24,
         color: isActive
-            ? const Color(0xFF142018)
+            ? AppColors.negroVitIA
             : Colors.white, // Blanco brillante si es inactivo (outline)
       ),
     );

@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'VitIA',
       theme: ThemeData(
-        textTheme: GoogleFonts.ibmPlexSansTextTheme(),
+        textTheme: GoogleFonts.interTextTheme(),
         useMaterial3: true,
       ),
       // Si hay sesión, vamos directo a HomePrincipalPage. Si no, a login.

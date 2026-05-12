@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 
 import 'package:dio/dio.dart';
 
@@ -226,7 +227,7 @@ class _HomePrincipalPageState extends ConsumerState<HomePrincipalPage> {
       }
     });
 
-    const Color darkBarColor = Color(0xFF142018); // Negro VitIA
+    const Color darkBarColor = AppColors.negroVitIA; // Negro VitIA
     const Color activeTabColor = Colors.white;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

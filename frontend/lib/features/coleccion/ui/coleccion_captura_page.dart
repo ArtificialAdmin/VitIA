@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:vinas_mobile/shared/widgets/vitia_loading.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -1431,21 +1432,11 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
   }
 
   Widget _buildLoadingState() {
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(height: 40),
-        SizedBox(
-          width: 60,
-          height: 60,
-          child: CircularProgressIndicator(
-              color: Color(0xFF8B1E5C), strokeWidth: 6),
-        ),
-        SizedBox(height: 24),
-        Text("Identificando...",
-            style: TextStyle(
-                fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500)),
-      ],
+    return const Center(
+      child: VitiaLoading(
+        label: "Identificando...",
+        size: 60,
+      ),
     );
   }
 

@@ -7,6 +7,8 @@ import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 
 import 'login_form_page.dart'; // <<< Nuevo archivo de formulario
 import 'auth_register_page.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
+
 class AuthLoginPage extends StatefulWidget {
   const AuthLoginPage({super.key});
 
@@ -16,9 +18,9 @@ class AuthLoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<AuthLoginPage> {
   // Color principal (Vino VitIA: #A01B4C)
-  final Color _authMainColor = const Color(0xFFA01B4C);
-  // Blanco cálido VitIA: #FFFFEFB
-  final Color _authFieldColor = const Color(0xFFFFFFEB);
+  final Color _authMainColor = AppColors.vinoVitIA;
+  // Blanco cálido VitIA: #FFFEFB
+  final Color _authFieldColor = AppColors.blancoCalidoVitIA;
 
   // Dialogo para cambiar la IP
   void _showServerConfigDialog(BuildContext context) {

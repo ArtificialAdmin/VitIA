@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 
 class VitIALogo extends StatelessWidget {
   final double fontSize;
@@ -8,7 +9,7 @@ class VitIALogo extends StatelessWidget {
   const VitIALogo({
     super.key,
     this.fontSize = 50,
-    this.color = const Color(0xFF142018),
+    this.color = AppColors.negroVitIA,
   });
 
   @override

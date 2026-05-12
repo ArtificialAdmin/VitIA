@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:vinas_mobile/shared/components/loading_indicator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -323,7 +324,7 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
         children: [
           // 1. MAPA (FONDO COMPLETO)
           _isLoading && _colecciones.isEmpty
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              ? const LoadingIndicator()
               : FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(

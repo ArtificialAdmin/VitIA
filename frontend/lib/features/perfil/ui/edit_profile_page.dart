@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart'; // kIsWeb
 import 'package:geolocator/geolocator.dart';
@@ -284,7 +285,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFF142018),
+                                  color: AppColors.negroVitIA,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -316,7 +317,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFCFBF6),
+                        color: AppColors.grisClaro1VitIA,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
@@ -329,7 +330,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF142018),
+                                color: AppColors.negroVitIA,
                               ),
                             ),
                             subtitle: const Text(
@@ -337,8 +338,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               style: TextStyle(fontSize: 12),
                             ),
                             value: _shareLocation,
-                            activeThumbColor: const Color(0xFF142018),
-                            secondary: const Icon(Icons.location_on_outlined, color: Color(0xFF142018)),
+                            activeThumbColor: AppColors.negroVitIA,
+                            secondary: const Icon(Icons.location_on_outlined, color: AppColors.negroVitIA),
                             onChanged: (bool value) {
                               setState(() {
                                 _shareLocation = value;
@@ -376,7 +377,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       child: ElevatedButton(
                         onPressed: (_isSaving || _isLocating || !_hasChanges) ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF142018),
+                          backgroundColor: AppColors.negroVitIA,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -395,7 +396,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 color: Colors.white.withValues(alpha: 0.5),
                 child: const Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF142018),
+                    color: AppColors.negroVitIA,
                   ),
                 ),
               ),
@@ -425,7 +426,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: const Color(0xFFFCFBF6),
+        fillColor: AppColors.grisClaro1VitIA,
       ),
       validator: (value) {
         if (!isOptional && (value == null || value.isEmpty)) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 
 class VitiaHeader extends StatelessWidget {
   final String title;
@@ -39,7 +40,7 @@ class VitiaHeader extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       fontStyle: FontStyle.italic,
-                      color: Colors.black,
+                      color: AppColors.negroVitIA,
                       letterSpacing: 1.0,
                     ),
                   ),
@@ -48,7 +49,7 @@ class VitiaHeader extends StatelessWidget {
                     style: GoogleFonts.ibmPlexSans(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: AppColors.negroVitIA,
                       letterSpacing: 1.0,
                     ),
                   ),
@@ -72,7 +73,7 @@ class VitiaHeader extends StatelessWidget {
                   style: GoogleFonts.lora(
                     fontSize: 32,
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF1E2623),
+                    color: AppColors.negroVitIA,
                   ),
                 ),
               // Prioridad: 1. actionIcon explícito, 2. Avatar de usuario
