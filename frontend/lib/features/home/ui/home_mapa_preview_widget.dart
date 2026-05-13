@@ -82,6 +82,51 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
     return "$lat, $lon";
   }
 
+  Future<void> _abrirChat(int otherUserId, String otherUserName, String? otherUserAvatar) async {
+    final myUserId = ref.read(userIdProvider);
+    if (myUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sesión para enviar mensajes.")));
+      return;
+    }
+
+    if (otherUserId == myUserId) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No puedes chatear contigo mismo.")));
+      return;
+    }
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final roomData = await ref.read(apiProvider).getOrCreateChat(otherUserId);
+      final roomId = roomData['id_room'];
+
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatRoomPage(
+              roomId: roomId,
+              myUserId: myUserId,
+              otherUserName: otherUserName,
+              otherUserAvatar: otherUserAvatar,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al abrir el chat: $e")));
+      }
+    }
+  }
+
   void _showPostPreview(Map<String, dynamic> col) {
     String? imageUrl = col['path_foto_usuario'];
     String titulo =
