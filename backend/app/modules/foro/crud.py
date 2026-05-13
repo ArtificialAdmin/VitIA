@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from app.core import models
+from app.modules.chat.crud import create_notification
 from . import schemas
 from typing import List, Optional
 
@@ -60,6 +61,20 @@ def create_comentario(db: Session, comentario: schemas.ComentarioCreate, id_usua
     db.add(db_comentario)
     db.commit()
     db.refresh(db_comentario)
+    
+    # Notificaciones
+    sender = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+    sender_name = sender.nombre if sender else "Un usuario"
+    
+    if comentario.id_padre:
+        parent = db.query(models.Comentario).filter(models.Comentario.id_comentario == comentario.id_padre).first()
+        if parent and parent.id_usuario != id_usuario:
+            create_notification(db, parent.id_usuario, "Nueva respuesta", f"{sender_name} ha respondido a tu comentario.", "forum", comentario.id_publicacion)
+    else:
+        post = db.query(models.Publicacion).filter(models.Publicacion.id_publicacion == comentario.id_publicacion).first()
+        if post and post.id_usuario != id_usuario:
+            create_notification(db, post.id_usuario, "Nuevo comentario", f"{sender_name} ha comentado en tu publicación.", "forum", comentario.id_publicacion)
+            
     return db_comentario
 
 def get_comentarios_publicacion(db: Session, id_publicacion: int, skip: int = 0, limit: int = 100):
@@ -119,7 +134,21 @@ def gestionar_voto(db: Session, modelo_voto, modelo_padre, id_usuario: int, id_c
     return estado
 
 def votar_publicacion(db: Session, id_usuario: int, id_publicacion: int, es_like: Optional[bool]):
-    return gestionar_voto(db, models.VotoPublicacion, models.Publicacion, id_usuario, "id_publicacion", id_publicacion, es_like)
+    estado = gestionar_voto(db, models.VotoPublicacion, models.Publicacion, id_usuario, "id_publicacion", id_publicacion, es_like)
+    if estado == "voto_creado" and es_like:
+        post = db.query(models.Publicacion).filter(models.Publicacion.id_publicacion == id_publicacion).first()
+        if post and post.id_usuario != id_usuario:
+            sender = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+            sender_name = sender.nombre if sender else "Alguien"
+            create_notification(db, post.id_usuario, "Nuevo Me gusta", f"A {sender_name} le gusta tu publicación.", "forum", id_publicacion)
+    return estado
 
 def votar_comentario(db: Session, id_usuario: int, id_comentario: int, es_like: Optional[bool]):
-    return gestionar_voto(db, models.VotoComentario, models.Comentario, id_usuario, "id_comentario", id_comentario, es_like)
+    estado = gestionar_voto(db, models.VotoComentario, models.Comentario, id_usuario, "id_comentario", id_comentario, es_like)
+    if estado == "voto_creado" and es_like:
+        comentario = db.query(models.Comentario).filter(models.Comentario.id_comentario == id_comentario).first()
+        if comentario and comentario.id_usuario != id_usuario:
+            sender = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+            sender_name = sender.nombre if sender else "Alguien"
+            create_notification(db, comentario.id_usuario, "Nuevo Me gusta", f"A {sender_name} le gusta tu comentario.", "forum", comentario.id_publicacion)
+    return estado

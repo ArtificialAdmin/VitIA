@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from app.core import models
+from app.modules.chat.crud import create_notification
 from . import schemas
 from datetime import datetime
 
@@ -70,6 +71,20 @@ def update_validacion(db: Session, id_validacion: int, id_experto: int, validaci
     
     db.commit()
     db.refresh(db_val)
+    
+    # Enviar Notificación al usuario
+    if coleccion and coleccion.id_usuario != id_experto:
+        experto = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_experto).first()
+        experto_name = experto.nombre if experto else "Un experto"
+        create_notification(
+            db=db,
+            id_usuario=coleccion.id_usuario,
+            title="Validación Completada",
+            body=f"{experto_name} ha validado tu foto de viña.",
+            type="validation",
+            related_id=db_val.id_validacion
+        )
+        
     return db_val
 
 def get_colecciones_sin_evaluar(db: Session, skip: int = 0, limit: int = 100):
@@ -149,4 +164,18 @@ def anotar_coleccion(db: Session, id_coleccion: int, id_experto: int, validacion
 
     db.commit()
     db.refresh(db_val)
+    
+    # Enviar Notificación al usuario
+    if coleccion and coleccion.id_usuario != id_experto:
+        experto = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_experto).first()
+        experto_name = experto.nombre if experto else "Un experto"
+        create_notification(
+            db=db,
+            id_usuario=coleccion.id_usuario,
+            title="Validación Completada",
+            body=f"{experto_name} ha validado tu foto de viña en el dataset.",
+            type="validation",
+            related_id=db_val.id_validacion
+        )
+
     return db_val

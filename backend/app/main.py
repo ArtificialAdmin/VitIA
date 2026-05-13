@@ -8,6 +8,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.usuarios.router import router as users_router
 from app.modules.foro.router import router as foro_router
 from app.modules.experto.router import router as experto_router
+from app.modules.chat.router import router as chat_router
 
 app = FastAPI(title="VitIA Backend Modular")
 
@@ -33,3 +34,4 @@ app.include_router(coleccion_router)
 app.include_router(foro_router)
 app.include_router(ml_router)
 app.include_router(experto_router)
+app.include_router(chat_router)

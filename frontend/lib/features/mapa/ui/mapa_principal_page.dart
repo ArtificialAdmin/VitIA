@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:vinas_mobile/shared/components/loading_indicator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:vinas_mobile/features/chat/ui/chat_room_page.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -99,6 +100,51 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
       debugPrint("Geocoding error: $e");
     }
     return "$lat, $lon";
+  }
+
+  Future<void> _abrirChat(int otherUserId, String otherUserName, String? otherUserAvatar) async {
+    final myUserId = ref.read(userIdProvider);
+    if (myUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sesión para enviar mensajes.")));
+      return;
+    }
+
+    if (otherUserId == myUserId) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No puedes chatear contigo mismo.")));
+      return;
+    }
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final roomData = await ref.read(apiProvider).getOrCreateChat(otherUserId);
+      final roomId = roomData['id_room'];
+
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatRoomPage(
+              roomId: roomId,
+              myUserId: myUserId,
+              otherUserName: otherUserName,
+              otherUserAvatar: otherUserAvatar,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al abrir el chat: $e")));
+      }
+    }
   }
 
   void _showPostPreview(Map<String, dynamic> col) {
@@ -200,17 +246,57 @@ class _MapaPrincipalPageState extends ConsumerState<MapaPrincipalPage> {
                 ),
                 const SizedBox(height: 8),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.person_outline,
-                        size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      autor,
-                      style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Colors.grey.shade200,
+                            backgroundImage: (prop != null && (prop['path_foto_perfil'] != null || prop['foto_perfil'] != null))
+                                ? NetworkImage(prop['path_foto_perfil'] ?? prop['foto_perfil'])
+                                : null,
+                            child: (prop == null || (prop['path_foto_perfil'] == null && prop['foto_perfil'] == null))
+                                ? const Icon(Icons.person, size: 16, color: Colors.grey)
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              autor,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.grey.shade800,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    if (prop != null && prop['id_usuario'] != null && prop['id_usuario'] != ref.read(userIdProvider))
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.black54),
+                        onSelected: (value) {
+                          if (value == 'chat') {
+                            _abrirChat(prop['id_usuario'], autor, prop['path_foto_perfil'] ?? prop['foto_perfil']);
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          const PopupMenuItem<String>(
+                            value: 'chat',
+                            child: Row(
+                              children: [
+                                Icon(Icons.chat_bubble_outline, size: 20, color: Color(0xFF7A2048)),
+                                SizedBox(width: 8),
+                                Text("Enviar mensaje privado"),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
                 const SizedBox(height: 20),

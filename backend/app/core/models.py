@@ -153,3 +153,46 @@ class Comentario(Base):
     autor = relationship("Usuario")
     publicacion = relationship("Publicacion", back_populates="comentarios")
     hijos = relationship("Comentario", backref=backref('padre', remote_side=[id_comentario]))
+
+class ChatRoom(Base):
+    __tablename__ = "ChatRooms"
+    id_room = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Participantes
+    id_user1 = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+    id_user2 = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+
+    user1 = relationship("Usuario", foreign_keys=[id_user1])
+    user2 = relationship("Usuario", foreign_keys=[id_user2])
+    messages = relationship("ChatMessage", back_populates="room", cascade="all, delete-orphan")
+
+    __table_args__ = (UniqueConstraint('id_user1', 'id_user2', name='unique_chat_room'),)
+
+class ChatMessage(Base):
+    __tablename__ = "ChatMessages"
+    id_message = Column(Integer, primary_key=True, index=True)
+    id_room = Column(Integer, ForeignKey("ChatRooms.id_room", ondelete="CASCADE"), nullable=False)
+    id_sender = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+    
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_read = Column(Boolean, default=False)
+
+    room = relationship("ChatRoom", back_populates="messages")
+    sender = relationship("Usuario", foreign_keys=[id_sender])
+
+class Notification(Base):
+    __tablename__ = "Notifications"
+    id_notification = Column(Integer, primary_key=True, index=True)
+    id_usuario = Column(Integer, ForeignKey("Usuarios.id_usuario", ondelete="CASCADE"), nullable=False)
+    
+    title = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    type = Column(String(50), nullable=False) # e.g. "chat", "forum", "validation"
+    related_id = Column(Integer, nullable=True) # e.g. id_room, id_publicacion, id_validacion
+    
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    usuario = relationship("Usuario", foreign_keys=[id_usuario])

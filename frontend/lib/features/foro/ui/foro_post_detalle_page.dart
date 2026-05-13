@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/features/foro/providers/foro_provider.dart';
 import 'package:vinas_mobile/core/providers.dart';
+import 'package:vinas_mobile/features/chat/ui/chat_room_page.dart';
 
 class ForoPostDetallePage extends ConsumerStatefulWidget {
   final Map<String, dynamic> post;
@@ -208,6 +209,58 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
     }
   }
 
+  Future<void> _abrirChat(Map<String, dynamic> currentPost) async {
+    final otherUserId = currentPost['authorId'];
+    if (otherUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se puede contactar a este usuario.")));
+      return;
+    }
+    
+    final myUserId = ref.read(userIdProvider);
+    if (myUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sesión para enviar mensajes.")));
+      return;
+    }
+
+    if (otherUserId == myUserId) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No puedes chatear contigo mismo.")));
+      return;
+    }
+
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final roomData = await ref.read(apiProvider).getOrCreateChat(otherUserId);
+      final roomId = roomData['id_room'];
+
+      if (mounted) Navigator.pop(context); // hide loading
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatRoomPage(
+              roomId: roomId,
+              myUserId: myUserId,
+              otherUserName: currentPost['user'] ?? "Usuario",
+              otherUserAvatar: currentPost['avatar'],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // hide loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al abrir el chat: $e")));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Escuchamos el estado global del foro para obtener la versión más reciente de este post
@@ -266,17 +319,40 @@ class _ForoPostDetallePageState extends ConsumerState<ForoPostDetallePage> {
                               : null,
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(currentPost['user'] ?? "Usuario",
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text(currentPost['fullDate'] ?? currentPost['time'] ?? "",
-                                style: TextStyle(
-                                    color: Colors.grey.shade500, fontSize: 13)),
-                          ],
-                        )
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(currentPost['user'] ?? "Usuario",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(currentPost['fullDate'] ?? currentPost['time'] ?? "",
+                                  style: TextStyle(
+                                      color: Colors.grey.shade500, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        if (currentPost['isMine'] == false)
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert, color: Colors.black54),
+                            onSelected: (value) {
+                              if (value == 'chat') {
+                                _abrirChat(currentPost);
+                              }
+                            },
+                            itemBuilder: (BuildContext context) => [
+                              const PopupMenuItem<String>(
+                                value: 'chat',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.chat_bubble_outline, size: 20, color: Color(0xFF7A2048)),
+                                    SizedBox(width: 8),
+                                    Text("Enviar mensaje privado"),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),

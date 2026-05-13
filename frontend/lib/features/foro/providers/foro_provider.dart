@@ -51,6 +51,7 @@ class ForoNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
             'titulo': item['titulo'] ?? '',
             'text': item['texto'] ?? '',
             'user': nombreUsuario,
+            'authorId': authorId,
             'time': _formatearFechaRelativa(rawDate),
             'fullDate': _formatearFechaDetallada(rawDate),
             'image': imagenUrl,

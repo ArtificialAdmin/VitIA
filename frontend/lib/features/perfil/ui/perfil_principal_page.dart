@@ -19,18 +19,37 @@ class PerfilPrincipalPage extends ConsumerStatefulWidget {
   ConsumerState<PerfilPrincipalPage> createState() => _PerfilPrincipalPageState();
 }
 
-class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
+class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String _nombreUser = "";
   String? _userPhotoUrl; // Variable para foto
   String _rolUser = "usuario"; // Nuevo estado para el rol
   bool _profileUpdated = false;
-  bool _isLoading = true; // <--- Nuevo estado de carga
+  bool _isLoading = true;
+  bool _isLoadingNotifs = false;
   int _pendingCount = 0;
+  int _tabIndex = 0; // 0 = Ajustes, 1 = Notificaciones
+  List<dynamic> _notificaciones = [];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _tabIndex = _tabController.index;
+      });
+      if (_tabIndex == 1 && _notificaciones.isEmpty) {
+        _fetchNotificaciones();
+      }
+    });
     _loadProfileHeader();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfileHeader() async {
@@ -67,6 +86,30 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
       }
     } catch (e) {
       debugPrint("Error fetching pending count: $e");
+    }
+  }
+
+  Future<void> _fetchNotificaciones() async {
+    setState(() {
+      _isLoadingNotifs = true;
+    });
+    try {
+      final notifs = await ref.read(apiProvider).getMyNotifications();
+      if (mounted) {
+        setState(() {
+          _notificaciones = notifs;
+        });
+        // Mark as read after fetching
+        await ref.read(apiProvider).markNotificationsAsRead();
+      }
+    } catch (e) {
+      debugPrint("Error fetching notifs: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingNotifs = false;
+        });
+      }
     }
   }
 
@@ -218,7 +261,45 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
               ),
             ],
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
+
+            // --- TABS (SLIDER ESTÁNDAR) ---
+            Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F2F2),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2))
+                  ],
+                ),
+                labelColor: Colors.black87,
+                unselectedLabelColor: Colors.grey.shade500,
+                labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 15),
+                splashBorderRadius: BorderRadius.circular(30),
+                padding: const EdgeInsets.all(5),
+                tabs: const [
+                  Tab(text: "Ajustes"),
+                  Tab(text: "Notificaciones"),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            if (_tabIndex == 0) ...[
+              // --- VISTA DE AJUSTES ---
 
             _buildProfileCard(
               title: "Ajustes del perfil",
@@ -288,9 +369,101 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> {
             ),
 
             const SizedBox(height: 40),
+            ] else ...[
+              // --- VISTA DE NOTIFICACIONES ---
+              _buildNotificacionesView(),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNotificacionesView() {
+    if (_isLoadingNotifs) {
+      return const Padding(
+        padding: EdgeInsets.all(32.0),
+        child: LoadingIndicator(label: "Cargando notificaciones..."),
+      );
+    }
+
+    if (_notificaciones.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Column(
+            children: [
+              Icon(Icons.notifications_off_outlined, size: 64, color: Colors.black26),
+              SizedBox(height: 16),
+              Text("No tienes notificaciones", style: TextStyle(color: Colors.black54)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _notificaciones.length,
+      itemBuilder: (context, index) {
+        final notif = _notificaciones[index];
+        final isRead = notif['is_read'] ?? true;
+        final title = notif['title'] ?? 'Notificación';
+        final body = notif['body'] ?? '';
+        final type = notif['type'] ?? 'general';
+
+        IconData icon;
+        Color iconColor;
+
+        switch (type) {
+          case 'chat':
+            icon = Icons.chat_bubble;
+            iconColor = const Color(0xFF7A2048); // Vino VitIA
+            break;
+          case 'forum':
+            icon = Icons.forum;
+            iconColor = Colors.blue;
+            break;
+          case 'validation':
+            icon = Icons.verified;
+            iconColor = const Color(0xFFD4AF37); // Dorado VitIA
+            break;
+          default:
+            icon = Icons.notifications;
+            iconColor = Colors.grey;
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isRead ? Colors.white : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isRead ? Colors.black12 : Colors.blue.shade200),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                backgroundColor: iconColor.withOpacity(0.1),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text(body, style: TextStyle(color: Colors.grey.shade700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

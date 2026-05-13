@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/features/foro/providers/foro_provider.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
+import 'package:vinas_mobile/features/chat/ui/chat_list_page.dart';
 import 'foro_post_detalle_page.dart';
 import 'foro_crear_post_page.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -217,20 +218,38 @@ class _ForoPageState extends ConsumerState<ForoPrincipalPage>
                 children: [
                   VitiaHeader(
                     title: "Comunidad",
-                    actionIcon: IconButton(
-                      icon: Icon(_isSearching ? Icons.close : Icons.search,
-                          size: 28),
-                      onPressed: () {
-                        setState(() {
-                          if (_isSearching) {
-                            _isSearching = false;
-                            _searchQuery = "";
-                            _searchController.clear();
-                          } else {
-                            _isSearching = true;
-                          }
-                        });
-                      },
+                    actionIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline, size: 28),
+                          onPressed: () {
+                            if (AuthSessionService.token == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sesión para ver tus chats.")));
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ChatListPage()),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(_isSearching ? Icons.close : Icons.search,
+                              size: 28),
+                          onPressed: () {
+                            setState(() {
+                              if (_isSearching) {
+                                _isSearching = false;
+                                _searchQuery = "";
+                                _searchController.clear();
+                              } else {
+                                _isSearching = true;
+                              }
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   Container(

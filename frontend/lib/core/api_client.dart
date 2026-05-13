@@ -7,6 +7,7 @@ import 'package:vinas_mobile/features/coleccion/services/coleccion_service.dart'
 import 'package:vinas_mobile/features/biblioteca/services/biblioteca_service.dart';
 import 'package:vinas_mobile/features/experto/services/experto_service.dart';
 import 'package:vinas_mobile/features/perfil/services/perfil_service.dart';
+import 'package:vinas_mobile/features/chat/services/chat_service.dart';
 import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 import 'package:vinas_mobile/core/models/prediction_model.dart';
 
@@ -20,6 +21,7 @@ class ApiClient {
   late final BibliotecaService _biblioteca;
   late final PerfilService _perfil;
   late final ExpertoService _experto;
+  late final ChatService _chat;
 
   ApiClient(String baseUrl) : _dio = Dio(BaseOptions(baseUrl: baseUrl)) {
     _dio.interceptors.add(
@@ -47,6 +49,7 @@ class ApiClient {
     _biblioteca = BibliotecaService(_dio);
     _perfil = PerfilService(_dio);
     _experto = ExpertoService(_dio);
+    _chat = ChatService(_dio);
   }
 
   // GETTERS for DataSources
@@ -56,6 +59,7 @@ class ApiClient {
   BibliotecaService get bibliotecaDataSource => _biblioteca;
   PerfilService get perfilDataSource => _perfil;
   ExpertoService get expertoDataSource => _experto;
+  ChatService get chatDataSource => _chat;
   Dio get dioInstance => _dio;
 
   void setToken(String token) {
@@ -134,4 +138,11 @@ class ApiClient {
 
   // Experto
   Future<int> getValidacionesPendientesCount() => _experto.getValidacionesPendientesCount();
+
+  // Chat & Notificaciones
+  Future<List<dynamic>> getMyNotifications() => _chat.getMyNotifications();
+  Future<void> markNotificationsAsRead() => _chat.markNotificationsAsRead();
+  Future<List<dynamic>> getMyChatRooms() => _chat.getMyChatRooms();
+  Future<Map<String, dynamic>> getOrCreateChat(int otherUserId) => _chat.getOrCreateChat(otherUserId);
+  Future<List<dynamic>> getChatMessages(int roomId, {int skip = 0, int limit = 50}) => _chat.getChatMessages(roomId, skip: skip, limit: limit);
 }
