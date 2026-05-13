@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:vinas_mobile/features/auth/services/auth_session_service.dart';
 
 // Usa localhost dinámico en web para evitar bloqueos CORS/PNA de Chrome
 // Mantiene la IP local para testeos en emulador o dispositivo físico
@@ -12,11 +13,11 @@ const String weatherApiKey = '10d519f407934518a30132259252511';
 String getBaseUrl() {
   String url = _localHostUrl;
 
-  // 1. Forzamos el uso de la IP local y sobreescribimos cualquier IP guardada.
-  // if (AuthSessionService.baseUrl != null &&
-  //     AuthSessionService.baseUrl!.isNotEmpty) {
-  //   url = AuthSessionService.baseUrl!;
-  // }
+  // Usa la IP guardada/configurada si existe
+  if (AuthSessionService.baseUrl != null &&
+      AuthSessionService.baseUrl!.isNotEmpty) {
+    url = AuthSessionService.baseUrl!;
+  }
 
   debugPrint("[ApiClient] Base URL resolved: $url");
   return url;

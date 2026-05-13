@@ -293,11 +293,46 @@ def comparar_variedades(resultados_ia, ruta_json=None):
 
     resultados_comparacion = []
 
+    color_detectado_ia = datos_detectados.get("225", "N/A")
+
     # 3. Comparar con cada variedad
     for variedad in base_datos:
         puntuacion_total = 0
         descriptores_evaluados = 0
         oiv_reales = variedad["descriptores_oiv"]
+
+        # ==========================================
+        # 🚨 REGLA DE EXCLUSIÓN ESTRICTA (3 GRUPOS DE COLOR)
+        # ==========================================
+        variedad_descartada = False
+        
+        if color_detectado_ia != "N/A" and "225" in oiv_reales:
+            color_real_variedad = oiv_reales["225"]
+            
+            # 1. Definir las 3 familias botánicas de color
+            familia_blancas = [1]              # 1: Verde amarilla
+            familia_rojas = [2, 3]             # 2: Rosa, 3: Roja
+            familia_negras = [4, 5, 6]         # 4: Gris, 5: Rojo violeta oscuro, 6: Azul negra
+            
+            # 2. Pequeña función interna para saber a qué familia pertenece un color
+            def obtener_familia(codigo):
+                if codigo in familia_blancas: return "BLANCAS"
+                if codigo in familia_rojas: return "ROJAS"
+                if codigo in familia_negras: return "NEGRAS"
+                return "DESCONOCIDA"
+                
+            # 3. Comprobar a qué familias pertenecen la foto y la variedad del JSON
+            familia_ia = obtener_familia(color_detectado_ia)
+            familia_json = obtener_familia(color_real_variedad)
+            
+            # 4. Si las familias no coinciden (ej: IA dice ROJAS, pero el JSON dice NEGRAS) -> VETO
+            if familia_ia != "DESCONOCIDA" and familia_json != "DESCONOCIDA":
+                if familia_ia != familia_json:
+                    variedad_descartada = True
+                
+        if variedad_descartada:
+            continue 
+        # ==========================================
         
         for codigo_oiv, valor_ia in datos_detectados.items():
             if valor_ia == "N/A" or not isinstance(valor_ia, (int, float)):
