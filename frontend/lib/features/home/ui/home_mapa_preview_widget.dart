@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/features/mapa/ui/mapa_principal_page.dart';
 import 'package:vinas_mobile/features/coleccion/ui/coleccion_detalle_page.dart';
+import 'package:vinas_mobile/features/chat/ui/chat_room_page.dart';
 
 class HomeMapaPreviewWidget extends ConsumerStatefulWidget {
   const HomeMapaPreviewWidget({super.key});
@@ -115,10 +116,11 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           ),
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 32),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: Container(
@@ -132,69 +134,120 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
                 ),
               ),
               if (imageUrl != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                        child:
-                            const Center(child: CircularProgressIndicator())),
-                    errorWidget: (context, url, err) => Container(
-                        color: Colors.grey.shade200,
-                        child: const Icon(Icons.image_not_supported)),
-                  ),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                            color: Colors.grey.shade200,
+                            child:
+                                const Center(child: CircularProgressIndicator())),
+                        errorWidget: (context, url, err) => Container(
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.image_not_supported)),
+                      ),
+                    ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          fechaStr,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Text(
                       titulo,
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                          color: Color(0xFF2D3436)),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 26,
+                          letterSpacing: -0.5,
+                          color: Color(0xFF111D13)),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(20),
+                  if (prop != null && prop['id_usuario'] != null && prop['id_usuario'] != ref.read(userIdProvider))
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFA01B4C).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.chat_bubble_rounded, color: Color(0xFFA01B4C)),
+                        tooltip: 'Enviar mensaje privado',
+                        onPressed: () {
+                          _abrirChat(prop['id_usuario'], autor, prop['path_foto_perfil'] ?? prop['foto_perfil']);
+                        },
+                      ),
                     ),
-                    child: Text(
-                      fechaStr,
-                      style: const TextStyle(
-                          color: Color(0xFF1976D2),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline,
-                      size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    autor,
-                    style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.grey.shade300,
+                      backgroundImage: (prop != null && (prop['path_foto_perfil'] != null || prop['foto_perfil'] != null))
+                          ? NetworkImage(prop['path_foto_perfil'] ?? prop['foto_perfil'])
+                          : null,
+                      child: (prop == null || (prop['path_foto_perfil'] == null && prop['foto_perfil'] == null))
+                          ? const Icon(Icons.person, size: 24, color: Colors.grey)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Capturado por",
+                            style: TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                          Text(
+                            autor,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
-              const Divider(),
               const SizedBox(height: 12),
               if (col['notas'] != null &&
                   col['notas'].toString().isNotEmpty) ...[
@@ -289,6 +342,7 @@ class _HomeMapPreviewState extends ConsumerState<HomeMapaPreviewWidget> {
               ],
               const SizedBox(height: 10),
             ],
+          ),
           ),
         );
       },
