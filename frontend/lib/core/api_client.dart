@@ -84,6 +84,7 @@ class ApiClient {
   Future<void> createPublicacion(String titulo, String texto, {XFile? imageFile, double? latitud, double? longitud, bool esPublica = true}) 
     => _foro.createPublicacion(titulo, texto, imageFile: imageFile, latitud: latitud, longitud: longitud, esPublica: esPublica);
   Future<void> deletePublicacion(int idPublicacion) => _foro.deletePublicacion(idPublicacion);
+  Future<Map<String, dynamic>> getPublicacion(int idPublicacion) => _foro.getPublicacion(idPublicacion);
   Future<List<dynamic>> getComentariosPublicacion(int idPublicacion) => _foro.getComentariosPublicacion(idPublicacion);
   Future<void> likePublicacion(int idPublicacion) => _foro.likePublicacion(idPublicacion);
   Future<void> unlikePublicacion(int idPublicacion) => _foro.unlikePublicacion(idPublicacion);
@@ -138,10 +139,13 @@ class ApiClient {
 
   // Experto
   Future<int> getValidacionesPendientesCount() => _experto.getValidacionesPendientesCount();
+  Future<Map<String, dynamic>> getValidacion(int idValidacion) => _experto.getValidacion(idValidacion);
 
   // Chat & Notificaciones
   Future<List<dynamic>> getMyNotifications() => _chat.getMyNotifications();
   Future<void> markNotificationsAsRead() => _chat.markNotificationsAsRead();
+  Future<void> deleteNotification(int id) => _chat.deleteNotification(id);
+  Future<void> deleteAllNotifications() => _chat.deleteAllNotifications();
   Future<List<dynamic>> getMyChatRooms() => _chat.getMyChatRooms();
   Future<Map<String, dynamic>> getOrCreateChat(int otherUserId) => _chat.getOrCreateChat(otherUserId);
   Future<List<dynamic>> getChatMessages(int roomId, {int skip = 0, int limit = 50}) => _chat.getChatMessages(roomId, skip: skip, limit: limit);

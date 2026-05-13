@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 import 'dart:convert';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/core/api_config.dart';
@@ -10,13 +11,26 @@ class ChatState {
   final List<ChatMessage> messages;
   final String? error;
 
-  ChatState({this.isLoading = false, this.messages = const [], this.error});
+  final bool isOtherUserOnline;
 
-  ChatState copyWith({bool? isLoading, List<ChatMessage>? messages, String? error}) {
+  ChatState({
+    this.isLoading = false,
+    this.messages = const [],
+    this.error,
+    this.isOtherUserOnline = false,
+  });
+
+  ChatState copyWith({
+    bool? isLoading,
+    List<ChatMessage>? messages,
+    String? error,
+    bool? isOtherUserOnline,
+  }) {
     return ChatState(
       isLoading: isLoading ?? this.isLoading,
       messages: messages ?? this.messages,
       error: error,
+      isOtherUserOnline: isOtherUserOnline ?? this.isOtherUserOnline,
     );
   }
 }
@@ -48,6 +62,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       // 2. Connect WebSocket
       _connectWebSocket();
 
+      // 3. Mark fetched messages as read (they will be broadcasted once connected)
+      markVisibleMessagesAsRead();
+
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -60,30 +77,128 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final wsBaseUrl = getBaseUrl().replaceFirst('http', 'ws');
     final wsUrl = Uri.parse('$wsBaseUrl/ws/chat/$_currentRoomId?user_id=$_currentUserId');
     
-    _channel = WebSocketChannel.connect(wsUrl);
+    _channel = IOWebSocketChannel.connect(wsUrl, pingInterval: const Duration(seconds: 10));
 
     _channel!.stream.listen((message) {
       final decoded = jsonDecode(message);
-      final newMessage = ChatMessage.fromJson(decoded);
-      
-      // Insert at beginning because ListView is reversed
-      state = state.copyWith(messages: [newMessage, ...state.messages]);
+      final msgType = decoded['type'] ?? 'chat_message';
+
+      if (msgType == 'presence') {
+        final userId = decoded['user_id'];
+        final status = decoded['status'];
+        if (userId != _currentUserId) {
+          state = state.copyWith(isOtherUserOnline: status == 'online');
+        }
+      } 
+      else if (msgType == 'read_receipt') {
+        final msgId = decoded['id_message'];
+        final currentList = state.messages.map((m) {
+          if (m.idMessage == msgId) {
+            return ChatMessage(
+              idMessage: m.idMessage,
+              idRoom: m.idRoom,
+              idSender: m.idSender,
+              content: m.content,
+              createdAt: m.createdAt,
+              isRead: true, // Marked as read!
+            );
+          }
+          return m;
+        }).toList();
+        state = state.copyWith(messages: currentList);
+      }
+      else if (msgType == 'chat_message') {
+        final newMessage = ChatMessage.fromJson(decoded);
+        
+        // Prevenir duplicados (si usamos update optimista)
+        bool isDuplicate = false;
+        final currentList = state.messages.map((m) {
+          if (m.idSender == newMessage.idSender && m.content == newMessage.content && m.idMessage < 0) {
+             isDuplicate = true;
+             return newMessage; // Reemplazar el temporal por el real
+          }
+          return m;
+        }).toList();
+
+        if (!isDuplicate) {
+          currentList.insert(0, newMessage);
+        }
+        
+        state = state.copyWith(messages: currentList);
+
+        // Si el mensaje es del otro usuario y estamos en la pantalla, enviar read_receipt
+        if (newMessage.idSender != _currentUserId) {
+           _sendReadReceipt(newMessage.idMessage);
+        }
+      }
     }, onError: (error) {
-      // Handle reconnect or show error
       print("WS Error: $error");
     }, onDone: () {
       print("WS Closed");
+      // Reconexión automática simple tras 3 segundos si la pantalla sigue abierta
+      if (_currentRoomId != null) {
+         Future.delayed(const Duration(seconds: 3), () {
+            if (_currentRoomId != null) _connectWebSocket();
+         });
+      }
     });
   }
 
   void sendMessage(String content) {
     if (_channel != null && content.isNotEmpty) {
-      _channel!.sink.add(jsonEncode({'content': content}));
+      // Optimistic update
+      final tempMessage = ChatMessage(
+        idMessage: -DateTime.now().millisecondsSinceEpoch, // Temporal negativo
+        idRoom: _currentRoomId!,
+        idSender: _currentUserId!,
+        content: content,
+        createdAt: DateTime.now(),
+        isRead: false,
+      );
+      state = state.copyWith(messages: [tempMessage, ...state.messages]);
+
+      _channel!.sink.add(jsonEncode({'type': 'chat_message', 'content': content}));
+    }
+  }
+
+  void _sendReadReceipt(int messageId) {
+    if (_channel != null) {
+      _channel!.sink.add(jsonEncode({
+        'type': 'read_receipt',
+        'id_message': messageId,
+      }));
+    }
+  }
+
+  void markVisibleMessagesAsRead() {
+    // Al abrir el chat, marcamos los no leídos como leídos
+    if (_channel == null || _currentUserId == null) return;
+    
+    bool hasChanges = false;
+    final currentList = state.messages.map((m) {
+       if (m.idSender != _currentUserId && !m.isRead) {
+          hasChanges = true;
+          _sendReadReceipt(m.idMessage);
+          return ChatMessage(
+            idMessage: m.idMessage,
+            idRoom: m.idRoom,
+            idSender: m.idSender,
+            content: m.content,
+            createdAt: m.createdAt,
+            isRead: true,
+          );
+       }
+       return m;
+    }).toList();
+
+    if (hasChanges) {
+       state = state.copyWith(messages: currentList);
     }
   }
 
   @override
   void dispose() {
+    _currentRoomId = null;
     _channel?.sink.close();
     super.dispose();
   }

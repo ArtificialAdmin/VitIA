@@ -74,11 +74,21 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                widget.otherUserName,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.otherUserName,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (chatState.isOtherUserOnline)
+                    Text(
+                      "En línea",
+                      style: GoogleFonts.inter(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                ],
               ),
             ),
           ],
@@ -100,8 +110,20 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                             itemBuilder: (context, index) {
                               final msg = chatState.messages[index];
                               final isMe = msg.idSender == widget.myUserId;
+                              
+                              bool showDateHeader = false;
+                              if (index == chatState.messages.length - 1) {
+                                showDateHeader = true;
+                              } else {
+                                final currentMsgDate = DateTime(msg.createdAt.year, msg.createdAt.month, msg.createdAt.day);
+                                final prevMsg = chatState.messages[index + 1];
+                                final prevMsgDate = DateTime(prevMsg.createdAt.year, prevMsg.createdAt.month, prevMsg.createdAt.day);
+                                if (currentMsgDate != prevMsgDate) {
+                                  showDateHeader = true;
+                                }
+                              }
 
-                              return Align(
+                              Widget messageBubble = Align(
                                 alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 8),
@@ -132,17 +154,66 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        DateFormat('HH:mm').format(msg.createdAt),
-                                        style: TextStyle(
-                                          color: isMe ? Colors.white70 : Colors.black45,
-                                          fontSize: 11,
-                                        ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            DateFormat('HH:mm').format(msg.createdAt),
+                                            style: TextStyle(
+                                              color: isMe ? Colors.white70 : Colors.black45,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          if (isMe) ...[
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              msg.isRead ? Icons.done_all : Icons.check,
+                                              color: msg.isRead ? Colors.blue.shade300 : Colors.white70,
+                                              size: 14,
+                                            ),
+                                          ]
+                                        ],
                                       ),
                                     ],
                                   ),
                                 ),
                               );
+
+                              if (showDateHeader) {
+                                final now = DateTime.now();
+                                final today = DateTime(now.year, now.month, now.day);
+                                final yesterday = today.subtract(const Duration(days: 1));
+                                final msgDate = DateTime(msg.createdAt.year, msg.createdAt.month, msg.createdAt.day);
+                                
+                                String dateStr;
+                                if (msgDate == today) {
+                                  dateStr = "Hoy";
+                                } else if (msgDate == yesterday) {
+                                  dateStr = "Ayer";
+                                } else {
+                                  dateStr = DateFormat('dd/MM/yyyy').format(msg.createdAt);
+                                }
+
+                                return Column(
+                                  children: [
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(vertical: 16),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black12,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        dateStr,
+                                        style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    messageBubble,
+                                  ],
+                                );
+                              }
+
+                              return messageBubble;
                             },
                           ),
           ),

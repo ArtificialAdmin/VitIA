@@ -17,6 +17,15 @@ class ExpertoService {
     }
   }
 
+  Future<Map<String, dynamic>> getValidacion(int id) async {
+    try {
+      final response = await _dio.get('/experto/validaciones/$id');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<int> getValidacionesPendientesCount() async {
     try {
       final response = await _dio.get('/experto/validaciones/pendientes/count');

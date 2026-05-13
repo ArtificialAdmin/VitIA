@@ -16,6 +16,15 @@ class ForoService {
     }
   }
 
+  Future<Map<String, dynamic>> getPublicacion(int id) async {
+    try {
+      final response = await _dio.get('/foro/$id');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> getUserPublicaciones() async {
     try {
       final response = await _dio.get('/foro/me'); // Ajustando a /foro/me si existiera o /foro/

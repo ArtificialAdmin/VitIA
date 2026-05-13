@@ -16,6 +16,14 @@ class ChatService {
     await _dio.post('/notifications/read');
   }
 
+  Future<void> deleteNotification(int notificationId) async {
+    await _dio.delete('/notifications/$notificationId');
+  }
+
+  Future<void> deleteAllNotifications() async {
+    await _dio.delete('/notifications');
+  }
+
   // --- CHAT ROOMS ---
 
   Future<List<dynamic>> getMyChatRooms() async {

@@ -47,6 +47,22 @@ def create_message(db: Session, room_id: int, sender_id: int, content: str):
     db.refresh(new_message)
     return new_message
 
+def mark_message_as_read(db: Session, message_id: int):
+    db.query(models.ChatMessage)\
+      .filter(models.ChatMessage.id_message == message_id, models.ChatMessage.is_read == False)\
+      .update({"is_read": True})
+    db.commit()
+
+def mark_all_room_messages_read(db: Session, room_id: int, reader_id: int):
+    # Only mark messages sent by the OTHER person as read
+    db.query(models.ChatMessage)\
+      .filter(
+          models.ChatMessage.id_room == room_id,
+          models.ChatMessage.id_sender != reader_id,
+          models.ChatMessage.is_read == False
+      ).update({"is_read": True})
+    db.commit()
+
 # --- NOTIFICATIONS ---
 
 def create_notification(db: Session, id_usuario: int, title: str, body: str, type: str, related_id: int = None):
@@ -82,4 +98,19 @@ def mark_notifications_as_read(db: Session, user_id: int):
     db.query(models.Notification)\
       .filter(models.Notification.id_usuario == user_id, models.Notification.is_read == False)\
       .update({"is_read": True})
+    db.commit()
+
+def delete_user_notification(db: Session, notification_id: int, user_id: int):
+    notif = db.query(models.Notification).filter(
+        models.Notification.id_notification == notification_id,
+        models.Notification.id_usuario == user_id
+    ).first()
+    if notif:
+        db.delete(notif)
+        db.commit()
+        return True
+    return False
+
+def delete_all_user_notifications(db: Session, user_id: int):
+    db.query(models.Notification).filter(models.Notification.id_usuario == user_id).delete()
     db.commit()
