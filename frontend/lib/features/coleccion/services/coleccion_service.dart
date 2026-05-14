@@ -95,4 +95,13 @@ class ColeccionService {
       rethrow;
     }
   }
+
+  Future<List<dynamic>> getExpertoMapa() async {
+    try {
+      final response = await _dio.get('/coleccion/expertos-mapa');
+      return response.data as List<dynamic>;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

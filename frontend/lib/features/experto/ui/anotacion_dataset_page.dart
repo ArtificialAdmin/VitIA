@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/core/api_config.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 import 'validacion_detalle_page.dart';
 
 class AnotacionDatasetPage extends ConsumerStatefulWidget {
@@ -44,62 +45,168 @@ class _AnotacionDatasetPageState extends ConsumerState<AnotacionDatasetPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Anotar Dataset'),
-        backgroundColor: const Color(0xFF1E2623), // Un color distinto al de validaciones
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _colecciones.isEmpty
-              ? const Center(child: Text('El dataset está completamente anotado. ¡Buen trabajo!'))
-              : ListView.builder(
-                  itemCount: _colecciones.length,
-                  itemBuilder: (context, index) {
-                    final coleccion = _colecciones[index];
-                    final variedadInfo = coleccion['variedad'] != null ? coleccion['variedad']['nombre'] : 'Desconocida';
-                    
-                    String? path = coleccion['path_foto_usuario']?.toString();
-                    String imageUrl = '';
-                    if (path != null && path.isNotEmpty) {
-                      if (path.startsWith('http')) {
-                        imageUrl = path;
-                      } else {
-                        final baseUrl = getBaseUrl();
-                        imageUrl = path.startsWith('/') ? "$baseUrl$path" : "$baseUrl/$path";
-                      }
-                    }
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.vinoVitIA));
+    }
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      child: ListTile(
-                        leading: imageUrl.isNotEmpty
-                            ? CircleAvatar(backgroundImage: NetworkImage(imageUrl))
-                            : const CircleAvatar(child: Icon(Icons.image)),
-                        title: Text('Variedad IA: $variedadInfo'),
-                        subtitle: Text('ID Colección: ${coleccion['id_coleccion']} | Tipo: ${coleccion['es_premium'] ? "Premium" : "Básica"}'),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ValidacionDetallePage(
-                                validacion: coleccion,
-                                isModoDataset: true,
-                              ),
-                            ),
-                          );
-                          if (result == true) {
-                            _loadData();
-                          }
-                        },
+    if (_colecciones.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Text(
+            'El dataset está completamente anotado. ¡Buen trabajo!',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.grisVitIA, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: AppColors.vinoVitIA,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        itemCount: _colecciones.length,
+        itemBuilder: (context, index) {
+          final coleccion = _colecciones[index];
+          final variedadInfo = coleccion['variedad'] != null ? coleccion['variedad']['nombre'] : 'Desconocida';
+          final isPremium = coleccion['es_premium'] == true;
+          final idCol = coleccion['id_coleccion'];
+          
+          String imageUrl = coleccion['path_foto_usuario']?.toString() ?? '';
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(color: AppColors.grisClaro2VitIA.withOpacity(0.5)),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ValidacionDetallePage(
+                        validacion: coleccion,
+                        isModoDataset: true,
                       ),
-                    );
-                  },
+                    ),
+                  );
+                  if (result == true) {
+                    _loadData();
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // Imagen con estilo miniatura premium
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.grey.shade100,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: imageUrl.isNotEmpty
+                              ? Image.network(imageUrl, fit: BoxFit.cover)
+                              : const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Información
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'ID: #$idCol',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.grisVitIA,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                if (isPremium)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFD4AF37).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.bolt, size: 10, color: Color(0xFFD4AF37)),
+                                        SizedBox(width: 2),
+                                        Text(
+                                          'PREMIUM',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFFD4AF37),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              variedadInfo,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.negroVitIA,
+                                fontFamily: 'Lora', // Usando Lora si está disponible en el tema
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(
+                                  coleccion['latitud'] != null ? Icons.location_on : Icons.location_off,
+                                  size: 14,
+                                  color: AppColors.grisVitIA,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  coleccion['latitud'] != null ? 'Geolocalizado' : 'Sin GPS',
+                                  style: const TextStyle(fontSize: 12, color: AppColors.grisVitIA),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.grisVitIA),
+                    ],
+                  ),
                 ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

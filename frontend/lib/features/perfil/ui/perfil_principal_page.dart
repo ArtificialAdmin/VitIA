@@ -14,6 +14,8 @@ import 'package:vinas_mobile/features/experto/ui/anotacion_dataset_page.dart';
 import 'package:vinas_mobile/features/chat/ui/chat_room_page.dart';
 import 'package:vinas_mobile/features/foro/ui/foro_post_detalle_page.dart';
 import 'package:vinas_mobile/features/experto/ui/validacion_detalle_page.dart';
+import 'package:vinas_mobile/features/experto/ui/experto_main_page.dart';
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
 
 class PerfilPrincipalPage extends ConsumerStatefulWidget {
   const PerfilPrincipalPage({super.key});
@@ -317,35 +319,54 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with 
       {required String title,
       required String subtitle,
       required Function() onTap,
+      IconData? icon,
       Color? textColor,
-      int badgeCount = 0}) {
+      int? badgeCount}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.black26),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.grisClaro2VitIA),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
           ),
           child: Row(
             children: [
+              if (icon != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: (textColor ?? AppColors.vinoVitIA).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: textColor ?? AppColors.vinoVitIA, size: 24),
+                ),
+                const SizedBox(width: 16),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.ibmPlexSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: textColor ?? Colors.black87),
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: GoogleFonts.ibmPlexSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor ?? Colors.black87),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        if (badgeCount > 0) ...[
+                        if (badgeCount != null && badgeCount > 0) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -481,29 +502,15 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with 
             if (_rolUser == 'experto' || _rolUser == 'admin') ...[
               const SizedBox(height: 16),
               _buildProfileCard(
-                title: "Validaciones Pendientes",
-                subtitle: "Revisa las imágenes de la IA",
-                textColor: const Color(0xFFD4AF37),
-                badgeCount: _pendingCount,
+                title: "Panel de Experto",
+                subtitle: "Accede a validaciones y mapa global",
+                icon: Icons.admin_panel_settings_rounded,
+                textColor: AppColors.vinoVitIA,
+                badgeCount: _pendingCount > 0 ? _pendingCount : null,
                 onTap: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const ValidacionesPage()),
-                  );
-                  _fetchPendingCount();
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildProfileCard(
-                title: "Anotar Dataset Completo",
-                subtitle: "Evalúa todas las imágenes del sistema",
-                textColor: const Color(0xFF1E2623),
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const AnotacionDatasetPage()),
+                    MaterialPageRoute(builder: (_) => const ExpertoMainPage()),
                   );
                   _fetchPendingCount();
                 },
@@ -597,74 +604,126 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with 
 
             switch (type) {
               case 'chat':
-                icon = Icons.chat_bubble;
-                iconColor = const Color(0xFF7A2048); // Vino VitIA
+                icon = Icons.chat_bubble_rounded;
+                iconColor = AppColors.vinoVitIA;
                 break;
               case 'forum':
-                icon = Icons.forum;
-                iconColor = Colors.blue;
+                icon = Icons.forum_rounded;
+                iconColor = AppColors.verdeVitIA;
                 break;
               case 'validation':
-                icon = Icons.verified;
+                icon = Icons.verified_user_rounded;
                 iconColor = const Color(0xFFD4AF37); // Dorado VitIA
                 break;
               default:
-                icon = Icons.notifications;
-                iconColor = Colors.grey;
+                icon = Icons.notifications_rounded;
+                iconColor = AppColors.grisVitIA;
             }
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
+              padding: const EdgeInsets.only(bottom: 10.0),
               child: Dismissible(
                 key: Key("notif_$id"),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.redAccent.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
                 ),
-                onDismissed: (direction) {
-                  _deleteNotification(id);
-                },
-                child: Card(
-                  elevation: 0,
-                  margin: EdgeInsets.zero,
-                  color: isRead ? Colors.grey.shade100 : const Color(0xFFE3F2FD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: isRead ? Colors.transparent : Colors.blue.shade300,
-                      width: 1,
+                onDismissed: (direction) => _deleteNotification(id),
+                child: GestureDetector(
+                  onTap: () => _handleNotificationClick(notif),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isRead ? AppColors.blancoCalidoVitIA : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isRead ? AppColors.grisClaro2VitIA : AppColors.vinoVitIA.withOpacity(0.3),
+                        width: isRead ? 1 : 1.5,
+                      ),
+                      boxShadow: [
+                        if (!isRead)
+                          BoxShadow(
+                            color: AppColors.vinoVitIA.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                      ],
                     ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: isRead ? Colors.grey.shade300 : iconColor.withOpacity(0.15),
-                      child: Icon(icon, color: isRead ? Colors.grey.shade600 : iconColor, size: 20),
-                    ),
-                    title: Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                        fontSize: 16,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          if (!isRead)
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 4,
+                              child: Container(color: AppColors.vinoVitIA),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: iconColor.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 22),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              title,
+                                              style: AppColors.textoGrande.copyWith(
+                                                fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                                color: AppColors.negroVitIA,
+                                              ),
+                                            ),
+                                          ),
+                                          if (!isRead)
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: AppColors.vinoVitIA,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        body,
+                                        style: AppColors.textoMediano.copyWith(
+                                          color: AppColors.grisVitIA,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        body,
-                        style: TextStyle(color: Colors.grey.shade700),
-                      ),
-                    ),
-                    onTap: () {
-                      debugPrint("ListTile onTap fired for notification $id");
-                      _handleNotificationClick(notif);
-                    },
                   ),
                 ),
               ),

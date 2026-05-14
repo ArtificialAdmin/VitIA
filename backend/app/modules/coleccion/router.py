@@ -115,6 +115,16 @@ def get_map_items(
     """Obtiene los items con coordenadas para mostrar en el mapa."""
     return crud.get_colecciones_mapa(db, modo=modo, id_usuario=current_user.id_usuario)
 
+@router.get("/expertos-mapa", response_model=List[schemas.Coleccion], summary="Mapa completo para expertos")
+def get_expert_map_items(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Obtiene absolutamente todos los items con coordenadas para el módulo de experto (públicos y privados)."""
+    if current_user.rol != "experto" and current_user.rol != "admin":
+        raise HTTPException(status_code=403, detail="No tienes permisos de experto.")
+    return crud.get_colecciones_expertos_mapa(db)
+
 @router.get("/{id_coleccion}", response_model=schemas.Coleccion, summary="Detalle de item")
 def get_item(
     id_coleccion: int,

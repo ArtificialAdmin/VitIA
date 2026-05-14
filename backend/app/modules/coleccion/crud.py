@@ -109,3 +109,11 @@ def solicitar_validacion_item(db: Session, db_item: models.Coleccion):
         db.commit()
         db.refresh(db_item)
     return db_item
+
+def get_colecciones_expertos_mapa(db: Session):
+    """Obtiene absolutamente todos los items con coordenadas para el módulo de experto."""
+    return db.query(models.Coleccion)\
+             .options(joinedload(models.Coleccion.propietario), joinedload(models.Coleccion.variedad), joinedload(models.Coleccion.validacion))\
+             .filter(models.Coleccion.latitud.isnot(None), models.Coleccion.longitud.isnot(None))\
+             .order_by(models.Coleccion.fecha_captura.desc())\
+             .all()

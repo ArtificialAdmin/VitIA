@@ -47,9 +47,15 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     try {
       final api = ref.read(apiProvider);
       
+      // Separar la foto de portada de las fotos premium adicionales para evitar duplicados
+      final List<XFile> otherPhotos = List.from(widget.photos);
+      if (_coverIndex < otherPhotos.length) {
+        otherPhotos.removeAt(_coverIndex);
+      }
+
       await api.saveToCollection(
-        imageFile: widget.photos[_coverIndex], // Selected cover
-        premiumFiles: widget.photos, // All 4 photos
+        imageFile: widget.photos[_coverIndex], // Foto principal
+        premiumFiles: otherPhotos, // Solo las fotos adicionales
         nombreVariedad: _selectedPrediction.variedad,
         analisisIA: widget.analysisText,
         notas: _notesController.text,

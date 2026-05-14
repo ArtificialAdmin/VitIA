@@ -68,12 +68,14 @@ class VitiaHeader extends StatelessWidget {
               if (leading != null) leading!,
 
               if (title.isNotEmpty)
-                Text(
-                  title,
-                  style: GoogleFonts.lora(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.negroVitIA,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.lora(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.negroVitIA,
+                    ),
                   ),
                 ),
               // Prioridad: 1. actionIcon explícito, 2. Avatar de usuario
