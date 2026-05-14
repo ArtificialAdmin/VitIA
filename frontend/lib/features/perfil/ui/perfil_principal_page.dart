@@ -240,6 +240,10 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with 
       } else if (type == 'forum') {
         final post = await ref.read(apiProvider).getPublicacion(relatedId);
         if (mounted) {
+          // Aseguramos que tenga la clave 'id' que espera la página de detalle
+          if (post['id'] == null && post['id_publicacion'] != null) {
+            post['id'] = post['id_publicacion'];
+          }
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -609,52 +613,58 @@ class _PerfilPrincipalPageState extends ConsumerState<PerfilPrincipalPage> with 
                 iconColor = Colors.grey;
             }
 
-            return Dismissible(
-              key: Key("notif_$id"),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.delete, color: Colors.white),
-              ),
-              onDismissed: (direction) {
-                _deleteNotification(id);
-              },
-              child: InkWell(
-                onTap: () => _handleNotificationClick(notif),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Dismissible(
+                key: Key("notif_$id"),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
-                    color: isRead ? Colors.grey.shade200 : const Color(0xFFE3F2FD),
+                    color: Colors.redAccent,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isRead ? Colors.transparent : Colors.blue.shade300, width: 1.5),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: isRead ? Colors.grey.shade300 : iconColor.withOpacity(0.15),
-                        child: Icon(icon, color: isRead ? Colors.grey.shade600 : iconColor, size: 20),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (direction) {
+                  _deleteNotification(id);
+                },
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  color: isRead ? Colors.grey.shade100 : const Color(0xFFE3F2FD),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isRead ? Colors.transparent : Colors.blue.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: CircleAvatar(
+                      backgroundColor: isRead ? Colors.grey.shade300 : iconColor.withOpacity(0.15),
+                      child: Icon(icon, color: isRead ? Colors.grey.shade600 : iconColor, size: 20),
+                    ),
+                    title: Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            const SizedBox(height: 4),
-                            Text(body, style: TextStyle(color: Colors.grey.shade700)),
-                          ],
-                        ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        body,
+                        style: TextStyle(color: Colors.grey.shade700),
                       ),
-                    ],
+                    ),
+                    onTap: () {
+                      debugPrint("ListTile onTap fired for notification $id");
+                      _handleNotificationClick(notif);
+                    },
                   ),
                 ),
               ),

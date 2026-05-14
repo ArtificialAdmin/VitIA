@@ -13,6 +13,12 @@ def get_validaciones_pendientes(db: Session, skip: int = 0, limit: int = 100):
               .limit(limit)\
              .all()
 
+def get_validacion(db: Session, id_validacion: int):
+    return db.query(models.ValidacionExperto)\
+             .options(joinedload(models.ValidacionExperto.coleccion).joinedload(models.Coleccion.variedad))\
+             .filter(models.ValidacionExperto.id_validacion == id_validacion)\
+             .first()
+
 def get_validaciones_pendientes_count(db: Session) -> int:
     return db.query(models.ValidacionExperto)\
              .filter(models.ValidacionExperto.estado == "pendiente")\

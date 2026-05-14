@@ -39,6 +39,18 @@ def count_validaciones_pendientes(
     total = crud.get_validaciones_pendientes_count(db)
     return {"count": total}
 
+@router.get("/validaciones/{id_validacion}", response_model=schemas.ValidacionExperto, summary="Obtener detalle de una validación")
+def read_validacion(
+    id_validacion: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """Obtiene el detalle de una validación específica."""
+    val = crud.get_validacion(db, id_validacion)
+    if not val:
+        raise HTTPException(status_code=404, detail="Validación no encontrada")
+    return val
+
 @router.post("/validaciones/{id_validacion}", response_model=schemas.ValidacionExperto, summary="Enviar validación")
 def validate_item(
     id_validacion: int,

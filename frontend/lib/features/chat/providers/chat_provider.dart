@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
 import 'dart:convert';
 import 'package:vinas_mobile/core/providers.dart';
 import 'package:vinas_mobile/core/api_config.dart';
@@ -77,7 +76,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     final wsBaseUrl = getBaseUrl().replaceFirst('http', 'ws');
     final wsUrl = Uri.parse('$wsBaseUrl/ws/chat/$_currentRoomId?user_id=$_currentUserId');
     
-    _channel = IOWebSocketChannel.connect(wsUrl, pingInterval: const Duration(seconds: 10));
+    _channel = WebSocketChannel.connect(wsUrl);
 
     _channel!.stream.listen((message) {
       final decoded = jsonDecode(message);
