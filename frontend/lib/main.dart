@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:vinas_mobile/shared/styles/app_theme.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -36,10 +38,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'VitIA',
-      theme: ThemeData(
-        textTheme: GoogleFonts.interTextTheme(),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.themeData,
       // Si hay sesión, vamos directo a HomePrincipalPage. Si no, a login.
       home: isLoggedIn ? const HomePrincipalPage() : const AuthLoginPage(),
     );

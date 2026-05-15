@@ -72,3 +72,97 @@ class AppColors {
     color: negroVitIA,
   );
 }
+
+class AppTheme {
+  static ThemeData get themeData {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.verdeVitIA,
+        primary: AppColors.negroVitIA,
+        secondary: AppColors.verdeVitIA,
+        error: AppColors.vinoVitIA,
+        surface: AppColors.blancoCalidoVitIA,
+      ),
+      scaffoldBackgroundColor: AppColors.blancoCalidoVitIA,
+      
+      // Tipografía Global
+      textTheme: GoogleFonts.interTextTheme().copyWith(
+        displayLarge: AppColors.h1,
+        displayMedium: AppColors.h2,
+        titleLarge: AppColors.subtitulo,
+        bodyLarge: AppColors.textoGrande,
+        bodyMedium: AppColors.textoMediano,
+        bodySmall: AppColors.textoPequeno,
+      ),
+
+      // App Bar estilo premium
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: GoogleFonts.lora(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: AppColors.negroVitIA,
+        ),
+        iconTheme: const IconThemeData(color: AppColors.negroVitIA),
+      ),
+
+      // Botones Premium (Dorados/Negros por defecto)
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFD4AF37), // Oro
+          foregroundColor: Colors.black,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ),
+
+      // Inputs (TextFields) modernos
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.grisClaro1VitIA,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2),
+        ),
+        labelStyle: const TextStyle(color: AppColors.grisVitIA),
+        hintStyle: const TextStyle(color: AppColors.grisVitIA),
+      ),
+
+      // Card Style
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.grisClaro2VitIA, width: 1),
+        ),
+        color: Colors.white,
+      ),
+
+      // Notificaciones (SnackBars) estilo Píldora Flotante
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.negroVitIA,
+        contentTextStyle: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+      ),
+    );
+  }
+}
