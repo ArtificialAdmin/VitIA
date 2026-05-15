@@ -12,14 +12,23 @@ import 'package:vinas_mobile/shared/styles/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inicialización de Firebase (con salvaguarda para Web/Missing Config)
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint("Firebase init failed (maybe missing google-services.json): $e");
+    debugPrint("----------------------------------------------------------------");
+    debugPrint("⚠️ FIREBASE ERROR: La app continuará sin notificaciones push.");
+    debugPrint("Detalle: $e");
+    debugPrint("----------------------------------------------------------------");
   }
 
   // Cargamos la sesión antes de iniciar la UI
-  final bool hasSession = await AuthSessionService.loadSession();
+  bool hasSession = false;
+  try {
+    hasSession = await AuthSessionService.loadSession();
+  } catch (e) {
+    debugPrint("Error loading session: $e");
+  }
 
   runApp(
     ProviderScope(

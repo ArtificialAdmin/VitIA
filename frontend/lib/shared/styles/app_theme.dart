@@ -10,8 +10,8 @@ class AppColors {
 
   // Vino VitIA: #A01B4C
   static const Color vinoVitIA = Color(0xFFA01B4C);
-  static Color vinoVitIA50 = const Color(0xFFA01B4C).withValues(alpha: 0.5);
-  static Color vinoVitIA25 = const Color(0xFFA01B4C).withValues(alpha: 0.25);
+  static Color vinoVitIA50 = const Color(0xFFA01B4C).withOpacity(0.5);
+  static Color vinoVitIA25 = const Color(0xFFA01B4C).withOpacity(0.25);
 
   // Amarillo VitIA: #F9F5A5
   static const Color amarilloVitIA = Color(0xFFF9F5A5);
@@ -151,17 +151,20 @@ class AppTheme {
         color: Colors.white,
       ),
 
-      // Notificaciones (SnackBars) estilo Píldora Flotante
+      // Notificaciones (SnackBars) estilo Tarjeta Premium Soft
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.negroVitIA,
+        backgroundColor: AppColors.grisClaro1VitIA,
         contentTextStyle: GoogleFonts.inter(
-          color: Colors.white,
+          color: AppColors.negroVitIA,
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.grisClaro2VitIA, width: 0.8),
+        ),
+        elevation: 2,
       ),
     );
   }
