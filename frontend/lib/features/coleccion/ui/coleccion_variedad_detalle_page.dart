@@ -473,8 +473,28 @@ class _ColeccionVariedadDetallePageState extends ConsumerState<ColeccionVariedad
                   if (item['estado_validacion'] == null && item['es_premium'] == true)
                     InkWell(
                       onTap: () async {
+                        final confirmar = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text("Confirmar solicitud"),
+                            content: const Text("El tiempo de respuesta puede ser variable dependiendo de la disponibilidad de nuestros expertos en este momento.\n\n¿Deseas continuar y solicitar la validación?"),
+                            actions: [
+                              TextButton(
+                                child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                                onPressed: () => Navigator.pop(ctx, false),
+                              ),
+                              TextButton(
+                                child: const Text("Confirmar", style: TextStyle(fontWeight: FontWeight.bold)),
+                                onPressed: () => Navigator.pop(ctx, true),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmar != true) return;
+
                         try {
-                          await ref.read(apiProvider).solicitarValidacion(item['id']);
+                          await ref.read(apiProvider).coleccionDataSource.solicitarValidacion(item['id']);
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Validación solicitada correctamente')));
                           _reloadCaptures();

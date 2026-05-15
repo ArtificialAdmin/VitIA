@@ -260,32 +260,67 @@ class _ExpertoMapaPageState extends ConsumerState<ExpertoMapaPage> {
               Text("Subida por: $autor", style: const TextStyle(color: Colors.grey, fontSize: 14)),
               Text("Fecha: $fechaStr", style: const TextStyle(color: Colors.grey, fontSize: 14)),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.verified_rounded),
-                  label: const Text("Ver Detalles / Gestionar Validación"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.negroVitIA,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+              if (col['validacion'] != null && col['validacion']['estado'] == 'validada')
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: col['validacion']['es_correcta'] == true ? Colors.green.shade50 : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: col['validacion']['es_correcta'] == true ? Colors.green.shade200 : Colors.red.shade200,
+                    ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    if (col['validacion'] != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col['validacion'])),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Esta captura no tiene una solicitud de validación activa."))
-                      );
-                    }
-                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        col['validacion']['es_correcta'] == true ? Icons.check_circle : Icons.cancel,
+                        color: col['validacion']['es_correcta'] == true ? Colors.green.shade700 : Colors.red.shade700,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          col['validacion']['es_correcta'] == true
+                              ? "El análisis de esta captura fue validado como CORRECTO por un experto."
+                              : "El análisis de esta captura fue validado como INCORRECTO por un experto.",
+                          style: TextStyle(
+                            color: col['validacion']['es_correcta'] == true ? Colors.green.shade900 : Colors.red.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.verified_rounded),
+                    label: const Text("Ver Detalles / Gestionar Validación"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.negroVitIA,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      if (col['validacion'] != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col['validacion'])),
+                        );
+                      } else {
+                        // Navigate in dataset mode since there is no specific validation request
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col, isModoDataset: true)),
+                        );
+                      }
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),

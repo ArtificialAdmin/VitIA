@@ -388,9 +388,40 @@ class _ValidacionDetallePageState extends ConsumerState<ValidacionDetallePage> {
           child: Column(
             children: [
               Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                  child: Image.network(dUrl, fit: BoxFit.cover, width: double.infinity),
+                child: GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => Dialog(
+                        backgroundColor: Colors.transparent,
+                        insetPadding: EdgeInsets.zero,
+                        child: Stack(
+                          children: [
+                            InteractiveViewer(
+                              panEnabled: true,
+                              minScale: 0.5,
+                              maxScale: 4.0,
+                              child: Center(
+                                child: Image.network(dUrl, fit: BoxFit.contain),
+                              ),
+                            ),
+                            Positioned(
+                              top: 40,
+                              right: 20,
+                              child: IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    child: Image.network(dUrl, fit: BoxFit.cover, width: double.infinity),
+                  ),
                 ),
               ),
               Padding(

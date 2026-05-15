@@ -689,6 +689,84 @@ class _ColeccionDetallePageState extends ConsumerState<ColeccionDetallePage> {
                         ),
                       ],
 
+                      // SECCIÓN SOLICITAR VALIDACIÓN
+                      if (_itemActual['es_premium'] == true && _itemActual['validacion'] == null) ...[
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.verified_user),
+                            label: const Text("Solicitar Validación de Experto"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorTema,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            ),
+                            onPressed: _isUpdating ? null : () async {
+                              final confirmar = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text("Confirmar solicitud"),
+                                  content: const Text("El tiempo de respuesta puede ser variable dependiendo de la disponibilidad de nuestros expertos en este momento.\n\n¿Deseas continuar y solicitar la validación?"),
+                                  actions: [
+                                    TextButton(
+                                      child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                    ),
+                                    TextButton(
+                                      child: const Text("Confirmar", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmar != true) return;
+
+                              setState(() => _isUpdating = true);
+                              try {
+                                final idCol = _itemActual['id'] ?? _itemActual['id_coleccion'];
+                                await ref.read(apiProvider).coleccionDataSource.solicitarValidacion(idCol);
+                                if (mounted) {
+                                  setState(() {
+                                    _itemActual['validacion'] = {'estado': 'pendiente'};
+                                    _isUpdating = false;
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("Solicitud enviada a los expertos"), backgroundColor: Colors.green),
+                                  );
+                                  if (widget.onClose != null) {
+                                    widget.onClose!(true);
+                                  }
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  setState(() => _isUpdating = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("Error al solicitar validación: $e"), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                      if (_itemActual['validacion'] != null && _itemActual['validacion']['estado'] == 'pendiente') ...[
+                         const SizedBox(height: 20),
+                         Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.orange.shade200)),
+                            child: Row(
+                               children: [
+                                  Icon(Icons.pending_actions, color: Colors.orange.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text("Validación de experto solicitada y pendiente de revisión.", style: TextStyle(color: Colors.orange.shade900))),
+                               ]
+                            )
+                         )
+                      ],
+
                       // SECCIÓN FEEDBACK EXPERTO
                       if (_itemActual['validacion'] != null && _itemActual['validacion']['feedback_experto'] != null && _itemActual['validacion']['feedback_experto'].toString().isNotEmpty) ...[
                         const SizedBox(height: 20),

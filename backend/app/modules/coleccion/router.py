@@ -37,12 +37,17 @@ async def create_item(
     longitud: Optional[float] = Form(None),
     es_publica: bool = Form(True),
     solicita_validacion: bool = Form(False),
-    premium_files: List[UploadFile] = File([]),
+    premium_files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Guarda una nueva captura enviada como MultipartForm."""
     try:
+        with open("request_debug.txt", "a") as f:
+            f.write(f"DEBUG: premium_files is {'None' if premium_files is None else len(premium_files)}\n")
+            if premium_files:
+                for idx, pf in enumerate(premium_files):
+                    f.write(f"  file {idx}: {pf.filename}\n")
         # 1. Subir Imagen Principal (Portada)
         file_bytes = await file.read()
         file_base64 = base64.b64encode(file_bytes).decode("utf-8")
@@ -58,20 +63,21 @@ async def create_item(
 
         # 2. Subir Imágenes Premium si existen
         premium_urls = []
-        for p_file in premium_files:
-            # Asegurarse de que es un archivo con contenido
-            p_bytes = await p_file.read()
-            if p_bytes:
-                p_base64 = base64.b64encode(p_bytes).decode("utf-8")
-                p_upload = imagekit.upload_file(
-                    file=p_base64,
-                    file_name=p_file.filename,
-                    options=UploadFileRequestOptions(
-                        folder="/vitia/colecciones/premium/",
-                        use_unique_file_name=True
+        if premium_files:
+            for p_file in premium_files:
+                # Asegurarse de que es un archivo con contenido
+                p_bytes = await p_file.read()
+                if p_bytes:
+                    p_base64 = base64.b64encode(p_bytes).decode("utf-8")
+                    p_upload = imagekit.upload_file(
+                        file=p_base64,
+                        file_name=p_file.filename,
+                        options=UploadFileRequestOptions(
+                            folder="/vitia/colecciones/premium/",
+                            use_unique_file_name=True
+                        )
                     )
-                )
-                premium_urls.append(p_upload.url)
+                    premium_urls.append(p_upload.url)
 
         # 3. Buscar/Crear ID de variedad por nombre
         variedad = biblio_crud.get_variedad_by_nombre(db, nombre_variedad)
@@ -88,7 +94,7 @@ async def create_item(
             latitud=latitud,
             longitud=longitud,
             es_publica=es_publica,
-            es_premium=True if premium_urls else False,
+            es_premium=True if (premium_urls or analisis_ia) else False,
             solicita_validacion_experto=solicita_validacion
         )
         

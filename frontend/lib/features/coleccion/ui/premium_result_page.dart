@@ -447,7 +447,29 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                 ),
                 value: _solicitaValidacionExperto,
                 activeThumbColor: const Color(0xFFD4AF37),
-                onChanged: (bool value) {
+                onChanged: (bool value) async {
+                  if (value) {
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Confirmar solicitud"),
+                        content: const Text("El tiempo de respuesta puede ser variable dependiendo de la disponibilidad de nuestros expertos en este momento.\n\n¿Deseas continuar y solicitar la validación?"),
+                        actions: [
+                          TextButton(
+                            child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                            onPressed: () => Navigator.pop(ctx, false),
+                          ),
+                          TextButton(
+                            child: const Text("Confirmar", style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: () => Navigator.pop(ctx, true),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmar != true) return;
+                  }
+
                   setState(() {
                     _solicitaValidacionExperto = value;
                   });

@@ -119,15 +119,19 @@ class _ValidacionesPageState extends ConsumerState<ValidacionesPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'SOLICITUD: $fechaStr',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.vinoVitIA,
-                                    letterSpacing: 1.0,
+                                Expanded(
+                                  child: Text(
+                                    'SOLICITUD: $fechaStr',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.vinoVitIA,
+                                      letterSpacing: 1.0,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                const SizedBox(width: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
