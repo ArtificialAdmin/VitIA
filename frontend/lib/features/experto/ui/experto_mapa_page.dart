@@ -261,36 +261,61 @@ class _ExpertoMapaPageState extends ConsumerState<ExpertoMapaPage> {
               Text("Fecha: $fechaStr", style: const TextStyle(color: Colors.grey, fontSize: 14)),
               const SizedBox(height: 24),
               if (col['validacion'] != null && col['validacion']['estado'] == 'validada')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: col['validacion']['es_correcta'] == true ? Colors.green.shade50 : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: col['validacion']['es_correcta'] == true ? Colors.green.shade200 : Colors.red.shade200,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        col['validacion']['es_correcta'] == true ? Icons.check_circle : Icons.cancel,
-                        color: col['validacion']['es_correcta'] == true ? Colors.green.shade700 : Colors.red.shade700,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          col['validacion']['es_correcta'] == true
-                              ? "El análisis de esta captura fue validado como CORRECTO por un experto."
-                              : "El análisis de esta captura fue validado como INCORRECTO por un experto.",
-                          style: TextStyle(
-                            color: col['validacion']['es_correcta'] == true ? Colors.green.shade900 : Colors.red.shade900,
-                            fontWeight: FontWeight.bold,
-                          ),
+                Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: col['validacion']['es_correcta'] == true ? Colors.green.shade50 : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: col['validacion']['es_correcta'] == true ? Colors.green.shade200 : Colors.red.shade200,
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            col['validacion']['es_correcta'] == true ? Icons.check_circle : Icons.cancel,
+                            color: col['validacion']['es_correcta'] == true ? Colors.green.shade700 : Colors.red.shade700,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              col['validacion']['es_correcta'] == true
+                                  ? "El análisis de esta captura fue validado como CORRECTO por un experto."
+                                  : "El análisis de esta captura fue validado como INCORRECTO por un experto.",
+                              style: TextStyle(
+                                color: col['validacion']['es_correcta'] == true ? Colors.green.shade900 : Colors.red.shade900,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.edit_note_rounded),
+                        label: const Text("Editar Validación"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.negroVitIA,
+                          side: const BorderSide(color: AppColors.negroVitIA),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col['validacion'])),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 )
               else
                 SizedBox(

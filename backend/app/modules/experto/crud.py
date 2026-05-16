@@ -43,13 +43,14 @@ def update_validacion(db: Session, id_validacion: int, id_experto: int, validaci
         coleccion.id_variedad = validacion_update.id_variedad_correcta
         db.add(coleccion)
     elif validacion_update.variedad_sugerida and coleccion:
-        # Si introdujo texto libre, buscamos si existe
-        var_existente = db.query(models.Variedad).filter(models.Variedad.nombre.ilike(validacion_update.variedad_sugerida)).first()
+        # Si introdujo texto libre, buscamos si existe (normalizamos nombre)
+        nombre_limpio = validacion_update.variedad_sugerida.strip()
+        var_existente = db.query(models.Variedad).filter(models.Variedad.nombre.ilike(nombre_limpio)).first()
         if var_existente:
             coleccion.id_variedad = var_existente.id_variedad
         else:
             nueva_var = models.Variedad(
-                nombre=validacion_update.variedad_sugerida,
+                nombre=nombre_limpio,
                 descripcion="Variedad clasificada por un experto.",
                 color="Desconocido"
             )
@@ -58,6 +59,10 @@ def update_validacion(db: Session, id_validacion: int, id_experto: int, validaci
             coleccion.id_variedad = nueva_var.id_variedad
         db.add(coleccion)
     
+    # Eliminar anotaciones previas para evitar duplicados si se re-evalúa
+    db.query(models.AnotacionImagen).filter(models.AnotacionImagen.id_validacion == db_val.id_validacion).delete()
+    db.flush()
+
     # Procesar imágenes para guardarlas en la nueva tabla AnotacionesImagenes
     if validacion_update.evaluacion_imagenes and coleccion:
         id_variedad_final = validacion_update.id_variedad_correcta if validacion_update.id_variedad_correcta else coleccion.id_variedad
@@ -138,12 +143,13 @@ def anotar_coleccion(db: Session, id_coleccion: int, id_experto: int, validacion
         coleccion.id_variedad = validacion_update.id_variedad_correcta
         db.add(coleccion)
     elif validacion_update.variedad_sugerida and coleccion:
-        var_existente = db.query(models.Variedad).filter(models.Variedad.nombre.ilike(validacion_update.variedad_sugerida)).first()
+        nombre_limpio = validacion_update.variedad_sugerida.strip()
+        var_existente = db.query(models.Variedad).filter(models.Variedad.nombre.ilike(nombre_limpio)).first()
         if var_existente:
             coleccion.id_variedad = var_existente.id_variedad
         else:
             nueva_var = models.Variedad(
-                nombre=validacion_update.variedad_sugerida,
+                nombre=nombre_limpio,
                 descripcion="Variedad clasificada por un experto.",
                 color="Desconocido"
             )
@@ -152,6 +158,10 @@ def anotar_coleccion(db: Session, id_coleccion: int, id_experto: int, validacion
             coleccion.id_variedad = nueva_var.id_variedad
         db.add(coleccion)
     
+    # Eliminar anotaciones previas si existen
+    db.query(models.AnotacionImagen).filter(models.AnotacionImagen.id_validacion == db_val.id_validacion).delete()
+    db.flush()
+
     # Insertar en AnotacionesImagenes
     if validacion_update.evaluacion_imagenes and coleccion:
         id_variedad_final = validacion_update.id_variedad_correcta if validacion_update.id_variedad_correcta else coleccion.id_variedad
