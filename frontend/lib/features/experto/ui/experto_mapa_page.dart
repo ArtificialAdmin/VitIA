@@ -310,7 +310,7 @@ class _ExpertoMapaPageState extends ConsumerState<ExpertoMapaPage> {
                           Navigator.pop(context);
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col['validacion'])),
+                            MaterialPageRoute(builder: (_) => ValidacionDetallePage(validacion: col, isModoDataset: true)),
                           );
                         },
                       ),

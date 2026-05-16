@@ -70,6 +70,30 @@ class _ValidacionDetallePageState extends ConsumerState<ValidacionDetallePage> {
       _evaluacionImagenes[foto.toString()] = null;
     }
 
+    // AUTO-RELLENADO: Si ya existe una validación, cargamos los datos
+    final existingVal = widget.isModoDataset ? widget.validacion['validacion'] : widget.validacion;
+    if (existingVal != null && existingVal['estado'] == 'validada') {
+      _esCorrecta = existingVal['es_correcta'];
+      _feedbackController.text = existingVal['feedback_experto'] ?? '';
+      _variedadController.text = existingVal['variedad_sugerida'] ?? '';
+      
+      // Re-mapear id_variedad_correcta si es errónea
+      if (_esCorrecta == false) {
+        _idVariedadCorrecta = coleccion['id_variedad'];
+      }
+
+      // Cargar evaluaciones de imágenes previas si existen
+      final anotaciones = existingVal['anotaciones'] as List<dynamic>?;
+      if (anotaciones != null) {
+        for (var anot in anotaciones) {
+          final url = anot['url_imagen'];
+          if (_evaluacionImagenes.containsKey(url)) {
+            _evaluacionImagenes[url] = anot['es_buena'];
+          }
+        }
+      }
+    }
+
     _loadVariedades();
   }
 
