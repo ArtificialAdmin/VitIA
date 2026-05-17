@@ -10,6 +10,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:intl/intl.dart';
 
 class PremiumResultPage extends ConsumerStatefulWidget {
   final List<PredictionModel> allPredictions;
@@ -103,11 +104,12 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     final variety = _selectedPrediction.variedad;
     final confidence = "${_selectedPrediction.confianza.toStringAsFixed(1)}%";
 
-    final paramMatch = RegExp(r'Parámetros cruzados:\s*(.+)').firstMatch(text);
-    final params = paramMatch?.group(1) ?? "N/A";
-
     final oivRegex = RegExp(r'OIV\s+(\d+)\s+-\s+([^:]+):\s*\n\s*-\s*IA\s*\(Detectado\)\s*:\s*([^\n]+)\s*\n\s*-\s*BD\s*\(Catálogo\)\s*:\s*([^\n]+)');
     final matches = oivRegex.allMatches(text);
+
+    // Contar exactamente cuántos parámetros detectó la IA (ignorando los N/A)
+    final matchedCount = matches.where((m) => !(m.group(3)?.contains("N/A") ?? true)).length;
+    final params = "$matchedCount descriptores OIV";
 
     // Cargar y comprimir imágenes para reducir peso del PDF
     final List<pw.MemoryImage> pdfImages = [];
@@ -119,6 +121,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
           minWidth: 800,
           minHeight: 800,
           quality: 60,
+          format: CompressFormat.jpeg,
         );
         
         if (compressedBytes != null && compressedBytes.isNotEmpty) {
@@ -276,50 +279,84 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     );
 
     if (pdfImages.isNotEmpty) {
-      pdf.addPage(
+      // Chunk the images to ensure max 4 per page
+      for (var i = 0; i < pdfImages.length; i += 4) {
+        final chunk = pdfImages.skip(i).take(4).toList();
+        
+        // Tamaños dinámicos: si solo hay 1 o 2 fotos, se verán mucho más grandes
+        double imageSize = 245;
+        if (chunk.length == 1) {
+          imageSize = 400;
+        } else if (chunk.length == 2) {
+          imageSize = 320;
+        }
+
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(40),
+            build: (pw.Context context) {
+              return pw.Center(
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    if (i == 0) pw.Text("CAPTURAS ANALIZADAS", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                    if (i == 0) pw.SizedBox(height: 20),
+                    pw.Wrap(
+                      alignment: pw.WrapAlignment.center,
+                      spacing: 15,
+                      runSpacing: 15,
+                      children: chunk.map((img) {
+                        return pw.Container(
+                          width: imageSize,
+                          height: imageSize,
+                          decoration: pw.BoxDecoration(
+                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                            border: pw.Border.all(color: PdfColors.grey300),
+                          ),
+                          child: pw.ClipRRect(
+                            horizontalRadius: 8,
+                            verticalRadius: 8,
+                            child: pw.Image(img, fit: pw.BoxFit.cover)
+                          )
+                        );
+                      }).toList(),
+                    ),
+                    if (i + 4 >= pdfImages.length) ...[
+                      pw.SizedBox(height: 30),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        children: [
+                          pw.Text("Ubicación de captura: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                          pw.Text(
+                            (widget.lat != null && widget.lon != null) 
+                                ? "${widget.lat!.toStringAsFixed(6)}, ${widget.lon!.toStringAsFixed(6)}"
+                                : "No disponible", 
+                            style: pw.TextStyle(
+                              color: (widget.lat != null) ? PdfColors.grey700 : PdfColors.red600,
+                              fontStyle: (widget.lat == null) ? pw.FontStyle.italic : pw.FontStyle.normal,
+                            )
+                          ),
+                        ]
+                      )
+                    ],
+                  ]
+                )
+              );
+            }
+          )
+        );
+      }
+    } else if (widget.photos.isNotEmpty) {
+       // Debug page si fallan todas
+       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(40),
           build: (pw.Context context) {
             return pw.Center(
-              child: pw.Column(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Text("CAPTURAS ANALIZADAS", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: primaryColor)),
-                  pw.SizedBox(height: 20),
-                  pw.Wrap(
-                    alignment: pw.WrapAlignment.center,
-                    spacing: 15,
-                    runSpacing: 15,
-                    children: pdfImages.map((img) {
-                      return pw.Container(
-                        width: 245,
-                        height: 245,
-                        decoration: pw.BoxDecoration(
-                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                          border: pw.Border.all(color: PdfColors.grey300),
-                        ),
-                        child: pw.ClipRRect(
-                          horizontalRadius: 8,
-                          verticalRadius: 8,
-                          child: pw.Image(img, fit: pw.BoxFit.cover)
-                        )
-                      );
-                    }).toList(),
-                  ),
-                  if (widget.lat != null && widget.lon != null) ...[
-                    pw.SizedBox(height: 30),
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      children: [
-                        pw.Text("Ubicación de captura: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
-                        pw.Text("${widget.lat!.toStringAsFixed(6)}, ${widget.lon!.toStringAsFixed(6)}", style: const pw.TextStyle(color: PdfColors.grey700)),
-                      ]
-                    )
-                  ],
-                ]
-              )
+              child: pw.Text("Error crítico: No se pudieron cargar las ${widget.photos.length} imágenes capturadas. El formato puede no estar soportado.", style: const pw.TextStyle(color: PdfColors.red)),
             );
           }
         )
@@ -329,10 +366,16 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     return pdf;
   }
 
+  String _generatePdfFilename() {
+    final date = DateFormat('dd_MM_yyyy').format(DateTime.now());
+    final variety = _selectedPrediction.variedad.replaceAll(' ', '_').toLowerCase();
+    return 'informe_${variety}_$date.pdf';
+  }
+
   Future<void> _sharePdf() async {
     if (widget.informeDescargable == null || widget.informeDescargable!.isEmpty) return;
     final pdf = await _buildPdfDocument();
-    await Printing.sharePdf(bytes: await pdf.save(), filename: 'informe_vitia.pdf');
+    await Printing.sharePdf(bytes: await pdf.save(), filename: _generatePdfFilename());
   }
 
   Future<void> _downloadPdf() async {
@@ -340,7 +383,7 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     final pdf = await _buildPdfDocument();
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'informe_vitia.pdf'
+      name: _generatePdfFilename()
     );
   }
 
