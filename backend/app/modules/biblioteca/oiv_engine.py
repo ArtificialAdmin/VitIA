@@ -258,10 +258,12 @@ def analizar_imagenes_camara(lista_imagenes, modelo):
         }
 
     return respuesta_app
-
+    
+      
 def comparar_variedades(resultados_ia, ruta_json=None):
     """
-    Compara los resultados de la IA con el archivo JSON y devuelve las mejores coincidencias.
+    Compara los resultados de la IA con el archivo JSON, aplica reglas de exclusión,
+    calcula la similitud y genera un informe oficial en texto.
     """
     if ruta_json is None:
         ruta_json = os.path.join(os.path.dirname(__file__), "variedades.json")
@@ -276,37 +278,38 @@ def comparar_variedades(resultados_ia, ruta_json=None):
     # 2. Extraer solo los valores numéricos detectados por la IA
     datos_detectados = {}
     
-    if resultados_ia.get("hojas"):
+    if resultados_ia.get("hojas") and resultados_ia["hojas"]:
         datos_detectados["065"] = resultados_ia["hojas"]["oiv_065"]["valor"]
         datos_detectados["067"] = resultados_ia["hojas"]["oiv_067"]["valor"]
         datos_detectados["068"] = resultados_ia["hojas"]["oiv_068"]["valor"]
         
-    if resultados_ia.get("racimos"):
+    if resultados_ia.get("racimos") and resultados_ia["racimos"]:
         datos_detectados["202"] = resultados_ia["racimos"]["oiv_202"]["valor"]
         datos_detectados["204"] = resultados_ia["racimos"]["oiv_204"]["valor"]
         datos_detectados["208"] = resultados_ia["racimos"]["oiv_208"]["valor"]
         
-    if resultados_ia.get("bayas"):
+    if resultados_ia.get("bayas") and resultados_ia["bayas"]:
         datos_detectados["220"] = resultados_ia["bayas"]["oiv_220"]["valor"]
         datos_detectados["223"] = resultados_ia["bayas"]["oiv_223"]["valor"]
         datos_detectados["225"] = resultados_ia["bayas"]["oiv_225"]["valor"]
 
     resultados_comparacion = []
 
+    # Extracción segura del color por si la foto no tiene uvas
     color_detectado_ia = datos_detectados.get("225", "N/A")
 
     # 3. Comparar con cada variedad
     for variedad in base_datos:
         puntuacion_total = 0
         descriptores_evaluados = 0
-        oiv_reales = variedad["descriptores_oiv"]
+        oiv_reales = variedad.get("descriptores_oiv", {})
 
         # ==========================================
         # 🚨 REGLA DE EXCLUSIÓN ESTRICTA (3 GRUPOS DE COLOR)
         # ==========================================
         variedad_descartada = False
         
-        if color_detectado_ia != "N/A" and "225" in oiv_reales:
+        if color_detectado_ia != "N/A" and color_detectado_ia is not None and "225" in oiv_reales:
             color_real_variedad = oiv_reales["225"]
             
             # 1. Definir las 3 familias botánicas de color
@@ -314,7 +317,7 @@ def comparar_variedades(resultados_ia, ruta_json=None):
             familia_rojas = [2, 3]             # 2: Rosa, 3: Roja
             familia_negras = [4, 5, 6]         # 4: Gris, 5: Rojo violeta oscuro, 6: Azul negra
             
-            # 2. Pequeña función interna para saber a qué familia pertenece un color
+            # 2. Función interna para saber a qué familia pertenece un color
             def obtener_familia(codigo):
                 if codigo in familia_blancas: return "BLANCAS"
                 if codigo in familia_rojas: return "ROJAS"
@@ -325,7 +328,7 @@ def comparar_variedades(resultados_ia, ruta_json=None):
             familia_ia = obtener_familia(color_detectado_ia)
             familia_json = obtener_familia(color_real_variedad)
             
-            # 4. Si las familias no coinciden (ej: IA dice ROJAS, pero el JSON dice NEGRAS) -> VETO
+            # 4. Si las familias no coinciden -> VETO
             if familia_ia != "DESCONOCIDA" and familia_json != "DESCONOCIDA":
                 if familia_ia != familia_json:
                     variedad_descartada = True
@@ -348,23 +351,92 @@ def comparar_variedades(resultados_ia, ruta_json=None):
                 elif diferencia <= 2.5: puntuacion = 50
                 elif diferencia <= 4: puntuacion = 20
                 else: puntuacion = 0
+                
+                # Bonus si el color coincide exactamente
+                if codigo_oiv == "225" and diferencia == 0:
+                     puntuacion = 150
                     
                 puntuacion_total += puntuacion
                 descriptores_evaluados += 1
                 
-        # 4. Calcular porcentaje
+        # 4. Calcular porcentaje y guardar datos
         if descriptores_evaluados > 0:
-            porcentaje_similitud = puntuacion_total / descriptores_evaluados
-            # Inferencia de color desde OIV 225 (Antocianos)
-            oiv_225 = oiv_reales.get("225")
-            color_inferido = "Blanca" if oiv_225 == 1 else "Tinta"
+            porcentaje_similitud = min(puntuacion_total / descriptores_evaluados, 100)
+            
+            # Inferencia de color para la UI de la App
+            oiv_225_real = oiv_reales.get("225")
+            color_inferido = "Blanca" if oiv_225_real == 1 else "Tinta"
 
             resultados_comparacion.append({
                 "nombre": variedad["nombre"],
                 "similitud": round(porcentaje_similitud, 1),
                 "descriptores_usados": descriptores_evaluados,
-                "color": color_inferido
+                "color": color_inferido,
+                "descriptores_oiv_variedad": oiv_reales # Guardamos para el informe
             })
         
     # Ordenar de mayor a menor similitud
-    return sorted(resultados_comparacion, key=lambda x: x["similitud"], reverse=True)
+    variedades_ordenadas = sorted(resultados_comparacion, key=lambda x: x["similitud"], reverse=True)
+
+    # ==========================================
+    # 📝 GENERACIÓN DEL INFORME TEXTUAL
+    # ==========================================
+    diccionario_nombres_oiv = {
+        "065": "Tamaño del limbo",
+        "067": "Forma del limbo",
+        "068": "Número de lóbulos",
+        "202": "Longitud del racimo",
+        "204": "Compacidad del racimo",
+        "208": "Forma del racimo",
+        "220": "Longitud de la baya",
+        "223": "Forma de la baya",
+        "225": "Color de la epidermis"
+    }
+
+    if len(variedades_ordenadas) > 0:
+        ganadora = variedades_ordenadas[0]
+        
+        lineas_informe = []
+        lineas_informe.append("==================================================")
+        lineas_informe.append("       INFORME AMPELOGRÁFICO DE IDENTIFICACIÓN    ")
+        lineas_informe.append("==================================================")
+        lineas_informe.append(f"Variedad sugerida: {ganadora['nombre'].upper()}")
+        lineas_informe.append(f"Fiabilidad del emparejamiento: {ganadora['similitud']}%")
+        lineas_informe.append(f"Parámetros cruzados: {ganadora['descriptores_usados']} descriptores OIV")
+        lineas_informe.append("--------------------------------------------------\n")
+        lineas_informe.append("VALORES MORFOLÓGICOS DETECTADOS (FOTO vs BASE DE DATOS):")
+        
+        # Obtener descripciones en lenguaje humano desde los resultados de la IA
+        textos_ia = {
+            "065": resultados_ia.get("hojas", {}).get("oiv_065", {}).get("descripcion", "No detectado") if resultados_ia.get("hojas") else "No detectado",
+            "067": resultados_ia.get("hojas", {}).get("oiv_067", {}).get("descripcion", "No detectado") if resultados_ia.get("hojas") else "No detectado",
+            "068": resultados_ia.get("hojas", {}).get("oiv_068", {}).get("descripcion", "No detectado") if resultados_ia.get("hojas") else "No detectado",
+            "202": resultados_ia.get("racimos", {}).get("oiv_202", {}).get("descripcion", "No detectado") if resultados_ia.get("racimos") else "No detectado",
+            "204": resultados_ia.get("racimos", {}).get("oiv_204", {}).get("descripcion", "No detectado") if resultados_ia.get("racimos") else "No detectado",
+            "208": resultados_ia.get("racimos", {}).get("oiv_208", {}).get("descripcion", "No detectado") if resultados_ia.get("racimos") else "No detectado",
+            "220": resultados_ia.get("bayas", {}).get("oiv_220", {}).get("descripcion", "No detectado") if resultados_ia.get("bayas") else "No detectado",
+            "223": resultados_ia.get("bayas", {}).get("oiv_223", {}).get("descripcion", "No detectado") if resultados_ia.get("bayas") else "No detectado",
+            "225": resultados_ia.get("bayas", {}).get("oiv_225", {}).get("descripcion", "No detectado") if resultados_ia.get("bayas") else "No detectado",
+        }
+
+        for cod, nombre_oiv in diccionario_nombres_oiv.items():
+            val_ia = datos_detectados.get(cod, "N/A")
+            val_real = ganadora["descriptores_oiv_variedad"].get(cod, "N/A")
+            desc_texto = textos_ia.get(cod, "")
+            
+            lineas_informe.append(f"\n• OIV {cod} - {nombre_oiv}:")
+            lineas_informe.append(f"  - IA (Detectado) : {val_ia} ({desc_texto})")
+            lineas_informe.append(f"  - BD (Catálogo)  : {val_real}")
+            
+        lineas_informe.append("\n==================================================")
+        lineas_informe.append("Informe generado automáticamente por el motor VitIA.")
+        
+        texto_final_documento = "\n".join(lineas_informe)
+    else:
+        texto_final_documento = "No se encontraron variedades que coincidan con los filtros mínimos de exclusión."
+
+    # Devolvemos el diccionario estructurado para que la API lo mande a la App
+    return {
+        "ranking": variedades_ordenadas,
+        "documento_texto": texto_final_documento
+    }

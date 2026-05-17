@@ -10,3 +10,4 @@ DEBUG: premium_files is 3
   file 0: 1000132098.jpg
   file 1: 1000132097.jpg
   file 2: 1000132096.jpg
+DEBUG: premium_files is None

@@ -50,3 +50,4 @@ class PredictionResponse(BaseModel):
     """Respuesta completa del servicio de IA."""
     predicciones: List[PredictionResult]
     analisis_premium: Optional[str] = None
+    informe_descargable: Optional[str] = None

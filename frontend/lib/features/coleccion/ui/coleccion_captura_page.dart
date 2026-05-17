@@ -478,6 +478,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
               response["predictions"];
           final String premiumAnalysis =
               response["analysis"] ?? "Análisis no disponible.";
+          final String? informeDescargable = response["informe_descargable"];
 
           if (mounted && premiumPredictions.isNotEmpty) {
             // NAVIGATE TO PREMIUM RESULT PAGE
@@ -487,6 +488,7 @@ class _ColeccionCapturaPageState extends ConsumerState<ColeccionCapturaPage> wit
                   allPredictions: premiumPredictions,
                   photos: List.from(_capturedPhotos),
                   analysisText: premiumAnalysis,
+                  informeDescargable: informeDescargable,
                   hasMissingPhases: hasMissing,
                   lat: position?.latitude,
                   lon: position?.longitude,

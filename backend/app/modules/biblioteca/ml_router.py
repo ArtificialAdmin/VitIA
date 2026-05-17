@@ -42,7 +42,7 @@ async def predict_image(file: UploadFile = File(...)):
 async def predict_premium(files: List[UploadFile] = File(...)):
     """
     Predicción avanzada para usuarios Premium (Múltiples fotos).
-    Combina los resultados de las capturas usando el nuevo motor OIV.
+    Combina los resultados de las capturas usando el nuevo motor OIV y genera un informe descargable.
     """
     if not files:
         raise HTTPException(status_code=400, detail="Se requiere al menos una imagen.")
@@ -69,21 +69,24 @@ async def predict_premium(files: List[UploadFile] = File(...)):
             continue
 
     if not lista_imagenes_cv2:
-        return PredictionResponse(predicciones=[])
+        return PredictionResponse(predicciones=[], analisis_premium="No se procesaron imágenes válidas.", informe_descargable="")
 
     # Llamar al nuevo motor usando el modelo premium
     resultados_ia = analizar_imagenes_camara(lista_imagenes_cv2, premium_model)
     
-    # Comparar con la base de datos local JSON
-    comparacion = comparar_variedades(resultados_ia)
+    # Llamar al comparador (ahora devuelve un diccionario con ranking e informe de texto)
+    comparacion_datos = comparar_variedades(resultados_ia)
     
-    if isinstance(comparacion, dict) and "error" in comparacion:
-        raise HTTPException(status_code=500, detail=comparacion["error"])
+    if isinstance(comparacion_datos, dict) and "error" in comparacion_datos:
+        raise HTTPException(status_code=500, detail=comparacion_datos["error"])
 
-    # Convertir el resultado a la estructura PredictionResult
+    # Extraer el ranking del nuevo formato de retorno
+    comparacion = comparacion_datos.get("ranking", [])
+    informe_texto = comparacion_datos.get("documento_texto", "")
+    
+    # Convertir el resultado a la estructura PredictionResult (Código original intacto)
     consolidated = []
     for c in comparacion:
-        # Solo devolver las que tengan algo de similitud, o podemos devolver top 5
         consolidated.append(
             PredictionResult(
                 variedad=c["nombre"], 
@@ -99,23 +102,19 @@ async def predict_premium(files: List[UploadFile] = File(...)):
     racimos_dict = resultados_ia.get('racimos') or {}
     bayas_dict = resultados_ia.get('bayas') or {}
 
-    # --- Generación de Reporte Premium Detallado ---
+    # --- Generación de Reporte Premium Detallado (Código original intacto) ---
     detalles = []
     
     if hojas_dict and hojas_dict.get('muestras_detectadas', 0) > 0:
-        # Ejemplo: "oiv_067" es la forma de la hoja
         desc_h = hojas_dict.get('oiv_067', {}).get('descripcion', 'detectada')
         detalles.append(f"Hojas con morfología {desc_h.lower()}")
     
     if racimos_dict and racimos_dict.get('muestras_detectadas', 0) > 0:
-        # Ejemplo: "oiv_204" es la compacidad
         desc_r = racimos_dict.get('oiv_204', {}).get('descripcion', 'detectada')
         detalles.append(f"Racimos de compacidad {desc_r.lower()}")
         
     if bayas_dict and bayas_dict.get('muestras_detectadas', 0) > 0:
-        # Ejemplo: "oiv_225" es el color
         desc_b = bayas_dict.get('oiv_225', {}).get('descripcion', 'detectado')
-        # Ejemplo: "oiv_223" es la forma de la baya
         desc_f = bayas_dict.get('oiv_223', {}).get('descripcion', 'detectada')
         detalles.append(f"Bayas {desc_b.lower()} de forma {desc_f.lower()}")
 
@@ -125,7 +124,9 @@ async def predict_premium(files: List[UploadFile] = File(...)):
     else:
         analisis_texto = "El análisis multiespectral no ha podido extraer suficientes descriptores morfológicos claros. Se recomienda repetir las capturas con mejor iluminación."
 
+    # Devolvemos la estructura antigua enriquecida con la clave del informe descargable
     return {
         "predicciones": consolidated,
-        "analisis_premium": analisis_texto
+        "analisis_premium": analisis_texto,
+        "informe_descargable": informe_texto
     }

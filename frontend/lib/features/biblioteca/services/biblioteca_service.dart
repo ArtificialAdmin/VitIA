@@ -54,10 +54,12 @@ class BibliotecaService {
       final response = await _dio.post('/ia/predict-premium', data: formData);
       final List<dynamic> rawList = response.data['predicciones'];
       final String? analisis = response.data['analisis_premium'];
+      final String? informeDescargable = response.data['informe_descargable'];
       
       return {
         "predictions": rawList.map((e) => PredictionModel.fromJson(e)).toList(),
         "analysis": analisis,
+        "informe_descargable": informeDescargable,
       };
     } catch (e) {
       rethrow;

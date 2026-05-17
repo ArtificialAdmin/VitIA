@@ -6,11 +6,16 @@ import 'package:vinas_mobile/core/providers.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vinas_mobile/core/models/prediction_model.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class PremiumResultPage extends ConsumerStatefulWidget {
   final List<PredictionModel> allPredictions;
   final List<XFile> photos;
   final String analysisText;
+  final String? informeDescargable;
   final bool hasMissingPhases;
   final double? lat;
   final double? lon;
@@ -20,6 +25,7 @@ class PremiumResultPage extends ConsumerStatefulWidget {
     required this.allPredictions,
     required this.photos,
     required this.analysisText,
+    this.informeDescargable,
     this.hasMissingPhases = false,
     this.lat,
     this.lon,
@@ -82,6 +88,260 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<pw.Document> _buildPdfDocument() async {
+    final pdf = pw.Document();
+    final String text = widget.informeDescargable ?? "";
+    
+    if (text.isEmpty) {
+      pdf.addPage(pw.Page(build: (context) => pw.Text("Informe no disponible")));
+      return pdf;
+    }
+
+    // Use the user's SELECTED prediction, not necessarily the first one
+    final variety = _selectedPrediction.variedad;
+    final confidence = "${_selectedPrediction.confianza.toStringAsFixed(1)}%";
+
+    final paramMatch = RegExp(r'Parámetros cruzados:\s*(.+)').firstMatch(text);
+    final params = paramMatch?.group(1) ?? "N/A";
+
+    final oivRegex = RegExp(r'OIV\s+(\d+)\s+-\s+([^:]+):\s*\n\s*-\s*IA\s*\(Detectado\)\s*:\s*([^\n]+)\s*\n\s*-\s*BD\s*\(Catálogo\)\s*:\s*([^\n]+)');
+    final matches = oivRegex.allMatches(text);
+
+    // Cargar y comprimir imágenes para reducir peso del PDF
+    final List<pw.MemoryImage> pdfImages = [];
+    for (var photo in widget.photos) {
+      try {
+        // Compresión al 60% de calidad, reduciendo dimensiones si es enorme
+        final compressedBytes = await FlutterImageCompress.compressWithFile(
+          photo.path,
+          minWidth: 800,
+          minHeight: 800,
+          quality: 60,
+        );
+        
+        if (compressedBytes != null && compressedBytes.isNotEmpty) {
+          pdfImages.add(pw.MemoryImage(compressedBytes));
+        } else {
+          // Fallback a la original si la compresión devuelve null
+          final bytes = await photo.readAsBytes();
+          pdfImages.add(pw.MemoryImage(bytes));
+        }
+      } catch (e) {
+        // Fallback a la original si la compresión falla
+        try {
+          final bytes = await photo.readAsBytes();
+          pdfImages.add(pw.MemoryImage(bytes));
+        } catch (innerE) {
+          // Ignorar si realmente no se puede leer la imagen
+        }
+      }
+    }
+
+    // Dynamic Colors based on grape color of the SELECTED variety
+    final String? grapeColor = _selectedPrediction.color?.toLowerCase();
+    PdfColor primaryColor = PdfColors.deepPurple900;
+    PdfColor secondaryColor = PdfColors.deepPurple800;
+    PdfColor highlightColor = PdfColors.green800;
+    
+    if (grapeColor == 'blanca') {
+      primaryColor = const PdfColor.fromInt(0xFF8B8000);
+      secondaryColor = const PdfColor.fromInt(0xFF6B6300);
+      highlightColor = const PdfColor.fromInt(0xFF556B2F);
+    } else if (grapeColor == 'tinta' || grapeColor == 'negra' || grapeColor == 'roja') {
+      primaryColor = const PdfColor.fromInt(0xFF800020);
+      secondaryColor = const PdfColor.fromInt(0xFF600018);
+      highlightColor = const PdfColor.fromInt(0xFF800020);
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (pw.Context context) {
+          if (matches.isEmpty && variety == "Desconocida") {
+            return [
+              pw.Text('Informe de Análisis Premium', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+              pw.SizedBox(height: 20),
+              pw.Text(text, style: const pw.TextStyle(fontSize: 12)),
+            ];
+          }
+
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('VitIA - Informe Premium', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                ]
+              )
+            ),
+            pw.SizedBox(height: 20),
+            
+            pw.Container(
+              padding: const pw.EdgeInsets.all(15),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+                border: pw.Border.all(color: PdfColors.grey400)
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text("RESULTADO PRINCIPAL", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                  pw.SizedBox(height: 10),
+                  pw.Row(
+                    children: [
+                      pw.Text("Variedad Seleccionada: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+                      pw.Text(variety, style: pw.TextStyle(fontSize: 16, color: highlightColor, fontWeight: pw.FontWeight.bold)),
+                    ]
+                  ),
+                  pw.SizedBox(height: 5),
+                  pw.Row(
+                    children: [
+                      pw.Text("Fiabilidad: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(confidence, style: pw.TextStyle(color: primaryColor)),
+                    ]
+                  ),
+                  pw.SizedBox(height: 5),
+                  pw.Row(
+                    children: [
+                      pw.Text("Parámetros analizados: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text(params),
+                    ]
+                  ),
+                ]
+              )
+            ),
+            pw.SizedBox(height: 30),
+            
+            pw.Text("DESGLOSE DE DESCRIPTORES OIV", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            
+            if (matches.isNotEmpty)
+              pw.TableHelper.fromTextArray(
+                context: context,
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                headerDecoration: pw.BoxDecoration(color: secondaryColor),
+                rowDecoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 10),
+                cellAlignment: pw.Alignment.centerLeft,
+                data: <List<String>>[
+                  <String>['Cód.', 'Descriptor OIV', 'Valor Detectado (IA)', 'Valor Catálogo'],
+                  ...matches.map((m) => [
+                    m.group(1)?.trim() ?? "",
+                    m.group(2)?.trim() ?? "",
+                    m.group(3)?.trim() ?? "",
+                    m.group(4)?.trim() ?? "",
+                  ]),
+                ],
+              ),
+              
+            pw.SizedBox(height: 30),
+            
+            pw.Text("RANKING DE VARIEDADES SUGERIDAS", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+            pw.Divider(),
+            pw.SizedBox(height: 10),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: widget.allPredictions.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final pred = entry.value;
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                  child: pw.Row(
+                    children: [
+                      pw.Text("${index + 1}.", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.SizedBox(width: 8),
+                      pw.Text(pred.variedad, style: pw.TextStyle(fontWeight: index == 0 ? pw.FontWeight.bold : pw.FontWeight.normal)),
+                      pw.SizedBox(width: 10),
+                      pw.Text("(${pred.confianza.toStringAsFixed(1)}%)", style: const pw.TextStyle(color: PdfColors.grey700)),
+                    ]
+                  )
+                );
+              }).toList(),
+            ),
+            pw.SizedBox(height: 40),
+            pw.Center(
+              child: pw.Text("Informe generado automáticamente por el motor VitIA.", style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+            )
+          ];
+        },
+      ),
+    );
+
+    if (pdfImages.isNotEmpty) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          build: (pw.Context context) {
+            return pw.Center(
+              child: pw.Column(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text("CAPTURAS ANALIZADAS", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                  pw.SizedBox(height: 20),
+                  pw.Wrap(
+                    alignment: pw.WrapAlignment.center,
+                    spacing: 15,
+                    runSpacing: 15,
+                    children: pdfImages.map((img) {
+                      return pw.Container(
+                        width: 245,
+                        height: 245,
+                        decoration: pw.BoxDecoration(
+                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                          border: pw.Border.all(color: PdfColors.grey300),
+                        ),
+                        child: pw.ClipRRect(
+                          horizontalRadius: 8,
+                          verticalRadius: 8,
+                          child: pw.Image(img, fit: pw.BoxFit.cover)
+                        )
+                      );
+                    }).toList(),
+                  ),
+                  if (widget.lat != null && widget.lon != null) ...[
+                    pw.SizedBox(height: 30),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Text("Ubicación de captura: ", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+                        pw.Text("${widget.lat!.toStringAsFixed(6)}, ${widget.lon!.toStringAsFixed(6)}", style: const pw.TextStyle(color: PdfColors.grey700)),
+                      ]
+                    )
+                  ],
+                ]
+              )
+            );
+          }
+        )
+      );
+    }
+    
+    return pdf;
+  }
+
+  Future<void> _sharePdf() async {
+    if (widget.informeDescargable == null || widget.informeDescargable!.isEmpty) return;
+    final pdf = await _buildPdfDocument();
+    await Printing.sharePdf(bytes: await pdf.save(), filename: 'informe_vitia.pdf');
+  }
+
+  Future<void> _downloadPdf() async {
+    if (widget.informeDescargable == null || widget.informeDescargable!.isEmpty) return;
+    final pdf = await _buildPdfDocument();
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'informe_vitia.pdf'
+    );
   }
 
   @override
@@ -403,6 +663,52 @@ class _PremiumResultPageState extends ConsumerState<PremiumResultPage> {
                 ),
               ),
             ),
+            
+            if (widget.informeDescargable != null && widget.informeDescargable!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _sharePdf,
+                        icon: const Icon(Icons.share, color: Color(0xFFD4AF37), size: 18),
+                        label: const Text(
+                          'Compartir PDF',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 13),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _downloadPdf,
+                        icon: const Icon(Icons.download, color: Color(0xFFD4AF37), size: 18),
+                        label: const Text(
+                          'Guardar PDF',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 13),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
 
             // 5. Notes
